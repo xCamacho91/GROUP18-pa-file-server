@@ -1,7 +1,4 @@
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 
 /**
  * This class represents the file handler. It was the methods for reading and writing text files.
@@ -37,5 +34,22 @@ public class FileHandler {
         fileOutputStream.close ( );
     }
 
+    /**
+     * Displays the content of a text file in the console.
+     *
+     * @param path the path of the file to display
+     *
+     * @throws IOException when an I/O error occurs when reading the file
+     */
+    public static void displayFile ( String path ) throws IOException {
+        BufferedReader reader = new BufferedReader(new FileReader(path));
+        System.out.println("FILE CONTENT:");
+        String line;
+        while ((line = reader.readLine()) != null) {
+            System.out.println(line);
+        }
+
+        reader.close();
+    }
 
 }
