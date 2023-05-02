@@ -44,20 +44,28 @@ public class Client {
      * @throws IOException if an I/O error occurs when writing stream header
      */
     public void validateFile() throws IOException {
-        String absolutePath = System.getProperty("user.dir") + File.separator + "users\\" + this.userName + File.separator + "files";
+        String absolutePath = System.getProperty("user.dir") + File.separator + "users\\" + this.userName;
         File folder = new File(absolutePath);
+        File subfolder = new File(folder, "files");
 
         if (!folder.exists()) {
-            folder.mkdir();
-            userDir = absolutePath;
-            System.out.println ( "Temporary directory path " + userDir );
-            System.out.println("Folder created at path: " + absolutePath);
+            subfolder.mkdirs();
+            userDir = subfolder.getAbsolutePath();
+            System.out.println("Folder created at path: " + folder.getAbsolutePath());
+            System.out.println("Subfolder created at path: " + subfolder.getAbsolutePath());
         } else {
-            userDir = absolutePath;
-            System.out.println("Folder already exists at path: " + absolutePath);
+            userDir = subfolder.getAbsolutePath();
+            System.out.println("Subfolder already exists at path: " + subfolder.getAbsolutePath());
         }
+
     }
 
+
+    public void configFile () {
+        // TODO generate the config file whem the user folder is created
+        // TODO charge the config file if the user folder already exists
+        // TODO set the amount request variable with the amount of files in the folder
+    }
 
 
     /**
