@@ -1,8 +1,8 @@
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.net.Socket;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Scanner;
 
 /**
@@ -16,7 +16,8 @@ public class Client {
     private final ObjectInputStream in;
     private final ObjectOutputStream out;
     private final boolean isConnected;
-    private final String userDir;
+    private static String userDir;
+    private final String userName;
 
     /**
      * Constructs a Client object by specifying the port to connect to. The socket must be created before the sender can
@@ -26,15 +27,39 @@ public class Client {
      *
      * @throws IOException when an I/O error occurs when creating the socket
      */
-    public Client ( int port ) throws IOException {
+    public Client ( int port, String userName ) throws IOException {
         client = new Socket ( HOST , port );
+        this.userName = userName;
         out = new ObjectOutputStream ( client.getOutputStream ( ) );
         in = new ObjectInputStream ( client.getInputStream ( ) );
         isConnected = true; // TODO: Check if this is necessary or if it should be controlled
         // Create a temporary directory for putting the request files
-        userDir = Files.createTempDirectory ( "fileServer" ).toFile ( ).getAbsolutePath ( );
-        System.out.println ( "Temporary directory path " + userDir );
+        validateFile();
     }
+
+
+    /**
+     * Validate the existence of the directory where the files will be stored.
+     *
+     * @throws IOException if an I/O error occurs when writing stream header
+     */
+    public void validateFile() {
+        String absolutePath = System.getProperty("user.dir") + File.separator + "users\\" + this.userName;
+        File folder = new File(absolutePath);
+        File subfolder = new File(folder, "files");
+
+        if (!folder.exists()) {
+            subfolder.mkdirs();
+            userDir = subfolder.getAbsolutePath();
+            System.out.println("Folder created at path: " + folder.getAbsolutePath());
+            System.out.println("Subfolder created at path: " + subfolder.getAbsolutePath());
+        } else {
+            userDir = subfolder.getAbsolutePath();
+            System.out.println("Subfolder already exists at path: " + subfolder.getAbsolutePath());
+        }
+
+    }
+
 
     /**
      * Executes the client. It reads the file from the console and sends it to the server. It waits for the response and
@@ -71,8 +96,11 @@ public class Client {
             Message response = ( Message ) in.readObject ( );
             System.out.println ( "File received" );
             FileHandler.writeFile ( userDir + "/" + fileName , response.getMessage ( ) );
+
+            FileHandler.displayFile(userDir + "/" + fileName);
+            // TODO show the content of the file in the console
         } catch ( IOException | ClassNotFoundException e ) {
-            e.printStackTrace ( );
+            System.out.println ( "ERROR - FILE NOT FOUND" );
         }
     }
 
