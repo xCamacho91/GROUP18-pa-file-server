@@ -83,10 +83,23 @@ public class Client {
         Scanner usrInput = new Scanner ( System.in );
         try {
             while ( isConnected ) {
-                if (requestsMade >= MAX_REQUESTS){
+                if (requestsMade+1 >= MAX_REQUESTS){
+
+                    //responde ao pedido pq é o quinto
+                    System.out.println("Request number: "+ requestsMade);
+                    // Reads the message to extract the path of the file
+                    System.out.println ( "Write the path of the file" );
+                    String request = usrInput.nextLine ( );
+                    // Request the file
+                    sendMessage ( request );
+                    // Waits for the response
+                    processResponse ( RequestUtils.getFileNameFromRequest ( request ) );
+
                     System.out.println("Reached 5 requests, making new handshake");
                     requestsMade=0;
                     //sair daqui, fazer novo handshake
+
+
                 }else{
                     System.out.println("Request number: "+ requestsMade);
                     // Reads the message to extract the path of the file
@@ -96,7 +109,7 @@ public class Client {
                     sendMessage ( request );
                     // Waits for the response
                     processResponse ( RequestUtils.getFileNameFromRequest ( request ) );
-                    requestsMade++;
+                    requestsMade++; //nao sei depois como será feito. incrementar so depois de ele meter o input, senao vai contar como pedido ele escrever quit para sair da sessao
                 }
 
             }
@@ -123,7 +136,7 @@ public class Client {
             FileHandler.displayFile(userDir + "/" + fileName);
             // TODO show the content of the file in the console
         } catch ( IOException | ClassNotFoundException e ) {
-                requestsMade--;
+                //requestsMade--;
             System.out.println ( "ERROR - FILE NOT FOUND" );
         }
     }
