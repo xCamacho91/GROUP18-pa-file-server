@@ -48,7 +48,6 @@ public class FileHandler {
         while ((line = reader.readLine()) != null) {
             System.out.println(line);
         }
-
         reader.close();
     }
 

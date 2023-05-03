@@ -43,7 +43,7 @@ public class Client {
      *
      * @throws IOException if an I/O error occurs when writing stream header
      */
-    public void validateFile() throws IOException {
+    public void validateFile() {
         String absolutePath = System.getProperty("user.dir") + File.separator + "users\\" + this.userName;
         File folder = new File(absolutePath);
         File subfolder = new File(folder, "files");
