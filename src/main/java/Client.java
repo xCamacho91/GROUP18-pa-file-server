@@ -18,6 +18,8 @@ public class Client {
     private final boolean isConnected;
     private static String userDir;
     private final String userName;
+    private int requestsMade = 0; //number of requests
+    private static final int MAX_REQUESTS = 5; //max of requests before new handshake
 
     /**
      * Constructs a Client object by specifying the port to connect to. The socket must be created before the sender can
@@ -35,7 +37,20 @@ public class Client {
         isConnected = true; // TODO: Check if this is necessary or if it should be controlled
         // Create a temporary directory for putting the request files
         validateFile();
+        //userDir = Files.createTempDirectory("fileServer").toFile().getAbsolutePath();
+        //System.out.println("Temporary directory path " + userDir);
+
+        // read number of requests from config file (se existir)
+        File configFile = new File(userDir + "/config.txt");
+        if (configFile.exists()) {
+            try (Scanner scanner = new Scanner(configFile)) {
+                requestsMade = scanner.nextInt();
+            }
+        } else {
+            requestsMade = 0; // ainda sem pedidos
+        }
     }
+
 
 
     /**
@@ -68,16 +83,25 @@ public class Client {
         Scanner usrInput = new Scanner ( System.in );
         try {
             while ( isConnected ) {
-                // Reads the message to extract the path of the file
-                System.out.println ( "Write the path of the file" );
-                String request = usrInput.nextLine ( );
-                // Request the file
-                sendMessage ( request );
-                // Waits for the response
-                processResponse ( RequestUtils.getFileNameFromRequest ( request ) );
+                if (requestsMade >= MAX_REQUESTS){
+                    System.out.println("Reached 5 requests, making new handshake");
+                    requestsMade=0;
+                    //sair daqui, fazer novo handshake
+                }else{
+                    System.out.println("Request number: "+ requestsMade);
+                    // Reads the message to extract the path of the file
+                    System.out.println ( "Write the path of the file" );
+                    String request = usrInput.nextLine ( );
+                    // Request the file
+                    sendMessage ( request );
+                    // Waits for the response
+                    processResponse ( RequestUtils.getFileNameFromRequest ( request ) );
+                    requestsMade++;
+                }
+
             }
-            // Close connection
             closeConnection ( );
+            //closeConnection ( );
         } catch ( IOException e ) {
             throw new RuntimeException ( e );
         }
@@ -99,6 +123,7 @@ public class Client {
             FileHandler.displayFile(userDir + "/" + fileName);
             // TODO show the content of the file in the console
         } catch ( IOException | ClassNotFoundException e ) {
+                requestsMade--;
             System.out.println ( "ERROR - FILE NOT FOUND" );
         }
     }
@@ -131,5 +156,18 @@ public class Client {
             throw new RuntimeException ( e );
         }
     }
+
+    private void saveConfig() throws IOException{
+        //creates a file config.txt in the temporary dic
+        File configFile = new File(userDir + "/config.txt");
+        if (!configFile.exists()) {
+            configFile.createNewFile();
+        }
+        // writes the number of requests to the file
+        try (PrintWriter writer = new PrintWriter(new FileWriter(configFile))) {
+            writer.println(requestsMade);
+        }
+    }
+
 
 }
