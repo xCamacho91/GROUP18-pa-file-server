@@ -61,13 +61,6 @@ public class Client {
     }
 
 
-    public void configFile () {
-        // TODO generate the config file whem the user folder is created
-        // TODO charge the config file if the user folder already exists
-        // TODO set the amount request variable with the amount of files in the folder
-    }
-
-
     /**
      * Executes the client. It reads the file from the console and sends it to the server. It waits for the response and
      * writes the file to the temporary directory.
