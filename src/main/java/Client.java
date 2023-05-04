@@ -46,7 +46,7 @@ public class Client {
                 requestsMade = scanner.nextInt();
             }
         } else {
-            requestsMade = 0; // Ainda sem pedidos
+            requestsMade = 0; // Ainda sem pedidoss
         }
     }
 
