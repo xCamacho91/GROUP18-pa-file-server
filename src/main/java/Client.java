@@ -17,6 +17,7 @@ public class Client {
     private final ObjectOutputStream out;
     private final boolean isConnected;
     private static String userDir;
+    private static String userDir1;
     private final String userName;
     private int requestsMade = 0; //number of requests
     private static final int MAX_REQUESTS = 5; //max of requests before new handshake
@@ -37,11 +38,9 @@ public class Client {
         isConnected = true; // TODO: Check if this is necessary or if it should be controlled
         // Create a temporary directory for putting the request files
         validateFile();
-        //userDir = Files.createTempDirectory("fileServer").toFile().getAbsolutePath();
-        //System.out.println("Temporary directory path " + userDir);
 
         // read number of requests from config file (se existir)
-        File configFile = new File(userDir + "/config.txt");
+        File configFile = new File("config/" +userName + ".txt");
         if (configFile.exists()) {
             try (Scanner scanner = new Scanner(configFile)) {
                 requestsMade = scanner.nextInt();
@@ -83,6 +82,7 @@ public class Client {
         Scanner usrInput = new Scanner ( System.in );
         try {
             while ( isConnected ) {
+                saveConfig();
                 if (requestsMade+1 >= MAX_REQUESTS){
 
                     //responde ao pedido pq é o quinto
@@ -170,15 +170,25 @@ public class Client {
         }
     }
 
-    private void saveConfig() throws IOException{
-        //creates a file config.txt in the temporary dic
-        File configFile = new File(userDir + "/config.txt");
-        if (!configFile.exists()) {
-            configFile.createNewFile();
-        }
-        // writes the number of requests to the file
-        try (PrintWriter writer = new PrintWriter(new FileWriter(configFile))) {
-            writer.println(requestsMade);
+    /**
+     * Saving in txt file's the number o requests of each client
+     * @throws IOException
+     */
+    public void saveConfig() throws IOException {
+        {
+            try {
+                File dir = new File("config");
+                if (!dir.exists()) {
+                    dir.mkdirs();
+                }
+                File file = new File(dir, this.userName + ".txt");
+                PrintWriter writer = new PrintWriter(file);
+                writer.println(this.requestsMade);
+                writer.close();
+                requestsMade=this.requestsMade;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
