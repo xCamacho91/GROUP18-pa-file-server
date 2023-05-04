@@ -110,7 +110,7 @@ public class Client {
             Message response = ( Message ) in.readObject ( );
             byte[] decryptedMessage = Encryption.decryptMessage ( response.getMessage ( ) , sharedSecret.toByteArray ( ) );
             System.out.println ( "File received" );
-            FileHandler.writeFile ( userDir + "/" + fileName , response.getMessage ( ) );
+            FileHandler.writeFile ( userDir + "/" + fileName , decryptedMessage );
 
             FileHandler.displayFile(userDir + "/" + fileName);
             // TODO show the content of the file in the console
