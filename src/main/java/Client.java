@@ -39,7 +39,7 @@ public class Client {
         // Create a temporary directory for putting the request filess
         validateFile();
 
-        // read number of requests from config file (se existir)
+        // read number of requests from configfile (se existir)
         File configFile = new File("config/" +userName + ".txt");
         if (configFile.exists()) {
             try (Scanner scanner = new Scanner(configFile)) {
