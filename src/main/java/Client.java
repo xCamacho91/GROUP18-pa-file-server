@@ -36,7 +36,7 @@ public class Client {
         out = new ObjectOutputStream ( client.getOutputStream ( ) );
         in = new ObjectInputStream ( client.getInputStream ( ) );
         isConnected = true; // TODO: Check if this is necessary or if it should be controlled
-        // Create a temporary directory for putting the request files
+        // Create a temporary directory for putting the request filess
         validateFile();
 
         // read number of requests from config file (se existir)
@@ -46,7 +46,7 @@ public class Client {
                 requestsMade = scanner.nextInt();
             }
         } else {
-            requestsMade = 0; // ainda sem pedidos
+            requestsMade = 0; // Ainda sem pedidos
         }
     }
 
