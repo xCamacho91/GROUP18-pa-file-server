@@ -127,7 +127,7 @@ public class Client {
      *
      * @param fileName the name of the file to write
      */
-    private void processResponse ( String fileName ) {
+    public void processResponse ( String fileName ) {
         try {
             Message response = ( Message ) in.readObject ( );
             System.out.println ( "File received" );
@@ -160,7 +160,7 @@ public class Client {
     /**
      * Closes the connection by closing the socket and the streams.
      */
-    private void closeConnection ( ) {
+    public void closeConnection ( ) {
         try {
             client.close ( );
             out.close ( );
@@ -192,5 +192,12 @@ public class Client {
         }
     }
 
+    /**
+     * used for tests
+     * @return
+     */
+    public int getRequestsMade() {
+        return requestsMade;
+    }
 
 }
