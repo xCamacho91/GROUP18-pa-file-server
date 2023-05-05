@@ -3,6 +3,7 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Properties;
 import java.util.Scanner;
 
 /**
@@ -16,6 +17,7 @@ public class Client {
     private final ObjectInputStream in;
     private final ObjectOutputStream out;
     private final boolean isConnected;
+    private static String pkiDir = System.getProperty("user.dir") + "/pki/public_keys/";
     private static String userDir;
     private final String userName;
 
@@ -34,29 +36,13 @@ public class Client {
         in = new ObjectInputStream ( client.getInputStream ( ) );
         isConnected = true; // TODO: Check if this is necessary or if it should be controlled
         // Create a temporary directory for putting the request files
-        validateFile();
-    }
+        FileHandler fileHandler = new FileHandler ( );
+        userDir = FileManager.validateFile(userName);
+        FileManager.createFile( userDir + "/../", "config.config", "server.request = 5");
 
-
-    /**
-     * Validate the existence of the directory where the files will be stored.
-     *
-     * @throws IOException if an I/O error occurs when writing stream header
-     */
-    public void validateFile() {
-        String absolutePath = System.getProperty("user.dir") + File.separator + "users\\" + this.userName;
-        File folder = new File(absolutePath);
-        File subfolder = new File(folder, "files");
-
-        if (!folder.exists()) {
-            subfolder.mkdirs();
-            userDir = subfolder.getAbsolutePath();
-            System.out.println("Folder created at path: " + folder.getAbsolutePath());
-            System.out.println("Subfolder created at path: " + subfolder.getAbsolutePath());
-        } else {
-            userDir = subfolder.getAbsolutePath();
-            System.out.println("Subfolder already exists at path: " + subfolder.getAbsolutePath());
-        }
+        Properties pro = FileManager.getProperties(userDir + "/../");
+        FileManager.createFile( pkiDir, userName + "PuK.txt", "sbsdbsdbsd");
+        FileManager.createFile( userDir + "/../", "private.txt", "dvbsdbsdbsfndndf");
 
     }
 
@@ -97,7 +83,7 @@ public class Client {
             System.out.println ( "File received" );
             FileHandler.writeFile ( userDir + "/" + fileName , response.getMessage ( ) );
 
-            FileHandler.displayFile(userDir + "/" + fileName);
+            System.out.println( FileManager.displayFile(userDir + "/" + fileName) );
             // TODO show the content of the file in the console
         } catch ( IOException | ClassNotFoundException e ) {
             System.out.println ( "ERROR - FILE NOT FOUND" );
