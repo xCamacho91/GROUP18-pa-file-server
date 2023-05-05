@@ -48,11 +48,15 @@ public class ClientHandler extends Thread {
                 // Reads the message to extract the path of the file
                 Message message = ( Message ) in.readObject ( );
                 byte[] decryptedMessage = Encryption.decryptMessage ( message.getMessage ( ) , sharedSecret.toByteArray ( ) );
-                String request = new String ( decryptedMessage);
-                // Reads the file and sends it to the client
-                byte[] content = FileHandler.readFile ( RequestUtils.getAbsoluteFilePath ( request ) );
-                byte[] encryptedMessage = Encryption.encryptMessage ( content , sharedSecret.toByteArray ( ) );
-                sendFile ( encryptedMessage );
+                //check integrity
+                if(!Integrity.verifyDigest(message.getSignature(),Integrity.generateDigest(decryptedMessage))){
+                    throw new RuntimeException ( "The integrity of the message is not verified" );
+                }else {
+                    String request = new String(decryptedMessage);
+                    // Reads the file and sends it to the client
+                    byte[] content = FileHandler.readFile(RequestUtils.getAbsoluteFilePath(request));
+                    sendFile(content, sharedSecret);
+                }
             }
             // Close connection
             closeConnection ( );
@@ -69,9 +73,10 @@ public class ClientHandler extends Thread {
      *
      * @throws IOException when an I/O error occurs when sending the file
      */
-    private void sendFile ( byte[] content ) throws Exception {
+    private void sendFile ( byte[] content , BigInteger sharedSecret) throws Exception {
         byte[] digest = Integrity.generateDigest ( content );
-        Message response = new Message ( content , digest);
+        byte[] encryptedMessage = Encryption.encryptMessage(content, sharedSecret.toByteArray());
+        Message response = new Message ( encryptedMessage , digest);
         out.writeObject ( response );
         out.flush ( );
     }

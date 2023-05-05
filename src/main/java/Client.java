@@ -103,17 +103,21 @@ public class Client {
      * Reads the response from the server and writes the file to the temporary directory.
      *
      * @param fileName the name of the file to write
+     * @param sharedSecret symmetric key to decrypt message
      */
     private void processResponse ( String fileName , BigInteger sharedSecret) {
         try {
-
             Message response = ( Message ) in.readObject ( );
             byte[] decryptedMessage = Encryption.decryptMessage ( response.getMessage ( ) , sharedSecret.toByteArray ( ) );
-            System.out.println ( "File received" );
-            FileHandler.writeFile ( userDir + "/" + fileName , decryptedMessage );
+            if(!Integrity.verifyDigest(response.getSignature(),Integrity.generateDigest(decryptedMessage))){
+                throw new RuntimeException ( "The integrity of the message is not verified" );
+            }else {
+                System.out.println("File received");
+                FileHandler.writeFile(userDir + "/" + fileName, decryptedMessage);
 
-            FileHandler.displayFile(userDir + "/" + fileName);
-            // TODO show the content of the file in the console
+                FileHandler.displayFile(userDir + "/" + fileName);
+                // TODO show the content of the file in the console
+            }
         } catch (Exception e ) {
             System.out.println ( "ERROR - FILE NOT FOUND" );
         }
@@ -124,6 +128,7 @@ public class Client {
      * of the {@link Message} class.
      *
      * @param filePath the message to send
+     * @param sharedSecret symmetric key to encrypt message
      *
      * @throws IOException when an I/O error occurs when sending the message
      */

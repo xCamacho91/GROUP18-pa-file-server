@@ -34,6 +34,8 @@ public class Encryption {
      * @throws Exception when the decryption fails
      */
     public static byte[] decryptMessage ( byte[] message , byte[] secretKey ) throws Exception {
+        //byte[] message16 = new byte[16];
+        //System.arraycopy(message,0,message16,0,Math.min(message.length,16));
         byte[] secretKeyPadded = ByteBuffer.allocate ( 16 ).put ( secretKey ).array ( );
         SecretKeySpec secreteKeySpec = new SecretKeySpec ( secretKeyPadded , "AES" );
         Cipher cipher = Cipher.getInstance ( "AES/ECB/PKCS5Padding" );
