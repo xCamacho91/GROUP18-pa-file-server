@@ -3,6 +3,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 
@@ -67,20 +68,42 @@ public class ClientHandler extends Thread {
     }
 
     /**
-     * Sends the file to the client
+     * Sends the file to the client. split the file in 1kb packages
      *
      * @param content the content of the file to send
      *
      * @throws IOException when an I/O error occurs when sending the file
      */
     private void sendFile ( byte[] content , BigInteger sharedSecret) throws Exception {
-        byte[] digest = Integrity.generateDigest ( content );
-        byte[] encryptedMessage = Encryption.encryptMessage(content, sharedSecret.toByteArray());
-        Message response = new Message ( encryptedMessage , digest);
-        out.writeObject ( response );
-        out.flush ( );
-    }
+        int tamanhoMax = 1024; // tamanho pacote 1024kb
+        int numPacotes = (content.length + tamanhoMax - 1) / tamanhoMax; //calcula numero de pacotes
 
+        for (int i = 0; i < numPacotes; i++) {
+            int outtu = i * tamanhoMax;
+            int compri = Math.min(tamanhoMax, content.length - outtu);
+            byte[] pacote = new byte[compri];
+            System.arraycopy(content, outtu, pacote, 0, compri);
+
+            byte[] digest = Integrity.generateDigest(pacote);
+            byte[] encryptedMessage = Encryption.encryptMessage(pacote, sharedSecret.toByteArray());
+
+            //Cria o pacote com a mensagem e outras infos (nr da mensagem, se é a ultima...)
+            Message response;
+            if(i== numPacotes-1){  //verifica se é o ultimo pacote ou nao
+                response = new Message(encryptedMessage, digest, i+1, numPacotes, true);
+            }else{
+                response = new Message(encryptedMessage, digest, i+1, numPacotes, false);
+            }
+
+            out.writeObject(response);
+            out.flush();
+        }
+        //byte[] digest = Integrity.generateDigest ( content );
+        //byte[] encryptedMessage = Encryption.encryptMessage(content, sharedSecret.toByteArray());
+        //Message response = new Message ( encryptedMessage , digest);
+        //out.writeObject ( response );
+        //out.flush ( );
+    }
 
     /**
      * Closes the connection by closing the socket and the streams.
