@@ -1,20 +1,14 @@
 import java.io.*;
 import java.math.BigInteger;
 import java.net.Socket;
-import java.nio.file.Files;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.Properties;
 import java.util.Scanner;
 
 /**
- * This class represents the client. The client sends the messages to the server
- * by means of a socket. The use of Object
+ * This class represents the client. The client sends the messages to the server by means of a socket. The use of Object
  * streams enables the sender to send any kind of object.
  */
 public class Client {
@@ -24,8 +18,7 @@ public class Client {
     private final ObjectInputStream in;
     private final ObjectOutputStream out;
     private final boolean isConnected;
-    //private final String userDir;
-    private static final String SECRET_KEY = "G-KaPdSgVkYp3s6v";
+    private final String pkiDir = System.getProperty("user.dir") + "/pki/public_keys/";
     private static String userDir;
     private final String userName;
     private final PublicKey publicRSAKey;
@@ -33,15 +26,13 @@ public class Client {
     private final PublicKey receiverPublicRSAKey;
 
     /**
-     * Constructs a Client object by specifying the port to connect to. The socket
-     * must be created before the sender can
+     * Constructs a Client object by specifying the port to connect to. The socket must be created before the sender can
      * send a message.
      *
      * @param port the port to connect to
      *
      * @throws IOException when an I/O error occurs when creating the socket
      */
-
     public Client ( int port, String userName ) throws Exception {
         client = new Socket ( HOST , port );
         this.userName = userName;
@@ -52,49 +43,32 @@ public class Client {
         this.publicRSAKey = keyPair.getPublic ( );
         isConnected = true; // TODO: Check if this is necessary or if it should be controlled
         // Create a temporary directory for putting the request files
-        validateFile();
-        receiverPublicRSAKey = rsaKeyDistribution ( );
-    }
 
+        this.receiverPublicRSAKey = rsaKeyDistribution ( );
 
-    /**
-     * Validate the existence of the directory where the files will be stored.
-     *
-     * @throws IOException if an I/O error occurs when writing stream header
-     */
-    public void validateFile() {
-        String absolutePath = System.getProperty("user.dir") + File.separator + "users\\" + this.userName;
-        File folder = new File(absolutePath);
-        File subfolder = new File(folder, "files");
-
-        if (!folder.exists()) {
-            subfolder.mkdirs();
-            userDir = subfolder.getAbsolutePath();
-            System.out.println("Folder created at path: " + folder.getAbsolutePath());
-            System.out.println("Subfolder created at path: " + subfolder.getAbsolutePath());
-        } else {
-            userDir = subfolder.getAbsolutePath();
-            System.out.println("Subfolder already exists at path: " + subfolder.getAbsolutePath());
-        }
+        //TODO : Create a function that to the following actions
+        userDir = FileManager.validateFile(userName);
+        FileManager.createFile( userDir + "/../", "config.config", "server.request = 5");
+        Properties pro = FileManager.getProperties(userDir + "/../");
+        FileManager.createFile( pkiDir, this.userName + "PuK.txt", this.publicRSAKey.toString());
+        FileManager.createFile( userDir + "/../", "private.txt", this.privateRSAKey.toString());
 
     }
 
 
     /**
-     * Executes the client. It reads the file from the console and sends it to the
-     * server. It waits for the response and
+     * Executes the client. It reads the file from the console and sends it to the server. It waits for the response and
      * writes the file to the temporary directory.
-     * @throws Exception
      */
-    public void execute() throws Exception {
-        Scanner usrInput = new Scanner(System.in);
+    public void execute ( ) {
+        Scanner usrInput = new Scanner ( System.in );
         try {
             // Agree on a shared secret
             BigInteger sharedSecret = agreeOnSharedSecret ( receiverPublicRSAKey );
             while ( isConnected ) {
                 // Reads the message to extract the path of the file
-                System.out.println("Write the path of the file");
-                String request = usrInput.nextLine();
+                System.out.println ( "Write the path of the file" );
+                String request = usrInput.nextLine ( );
                 // Request the file
                 sendMessage ( request , sharedSecret);
                 // Waits for the response
@@ -106,36 +80,15 @@ public class Client {
             throw new RuntimeException ( e );
         }
         // Close connection
-        closeConnection();
+        closeConnection ( );
     }
 
-
-
-    private boolean verify_HMAC() throws Exception {
-        try {
-            Message response = (Message) in.readObject();
-            Message Hmac = (Message) in.readObject();
-            byte [] decryptedMessage = FileEncryption.decryptMessage(response.getMessage(), SECRET_KEY.getBytes());
-            MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
-            String hmac = ("5v8y/B?E");
-            byte[] message_enc = HMAC.computeHMAC(decryptedMessage, hmac.getBytes(), 64, messageDigest);
-            System.out.println("Server HMAC: " + new String(Hmac.getMessage()));
-            System.out.println("Client HMAC: " + new String(message_enc));
-            if (Arrays.equals(Hmac.getMessage(), message_enc)) {
-                System.out.println("File is not modified");
-                System.out.println("Output File :");
-                System.out.println(new String(decryptedMessage));
-                return true;
-            } else {
-                return false;
-            }
-        } catch (ClassNotFoundException | IOException | NoSuchAlgorithmException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        return false;
-    }
-    
+    /**
+     * Reads the response from the server and writes the file to the temporary directory.
+     *
+     * @param fileName the name of the file to write
+     * @param sharedSecret symmetric key to decrypt message
+     */
     private void processResponse ( String fileName , BigInteger sharedSecret) {
         try {
             Message response = ( Message ) in.readObject ( );
@@ -146,17 +99,18 @@ public class Client {
                 System.out.println("File received");
                 FileHandler.writeFile(userDir + "/" + fileName, decryptedMessage);
 
-                FileHandler.displayFile(userDir + "/" + fileName);
+                System.out.println( FileManager.displayFile(userDir + "/" + fileName) );
                 // TODO show the content of the file in the console
             }
-        } catch (Exception e ) {
+        } catch ( IOException | ClassNotFoundException e ) {
             System.out.println ( "ERROR - FILE NOT FOUND" );
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
     /**
-     * Sends the path of the file to the server using the OutputStream of the
-     * socket. The message is sent as an object
+     * Sends the path of the file to the server using the OutputStream of the socket. The message is sent as an object
      * of the {@link Message} class.
      *
      * @param filePath the message to send
@@ -170,20 +124,20 @@ public class Client {
         // Creates the message object
         Message messageObj = new Message ( encryptedMessage , digest);
         // Sends the message
-        out.writeObject(messageObj);
-        out.flush();
+        out.writeObject ( messageObj );
+        out.flush ( );
     }
 
     /**
      * Closes the connection by closing the socket and the streams.
      */
-    private void closeConnection() {
+    private void closeConnection ( ) {
         try {
-            client.close();
-            out.close();
-            in.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+            client.close ( );
+            out.close ( );
+            in.close ( );
+        } catch ( IOException e ) {
+            throw new RuntimeException ( e );
         }
     }
 

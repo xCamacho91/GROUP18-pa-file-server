@@ -1,8 +1,6 @@
 import java.security.MessageDigest;
 
 public class HMAC {
-    
-
 
     public static byte[] computeHMAC (byte [] text_message, byte [] key , int blocksize, MessageDigest messageDigest ){
         byte [] blockedSizedKey = computeBlockSizedKey (key , blocksize, messageDigest);
