@@ -18,9 +18,7 @@ public class Client {
     private final ObjectInputStream in;
     private final ObjectOutputStream out;
     private final boolean isConnected;
-    private static String pkiDir = System.getProperty("user.dir") + "/pki/public_keys/";
-    //private final String userDir;
-    private static final String SECRET_KEY = "G-KaPdSgVkYp3s6v";
+    private final String pkiDir = System.getProperty("user.dir") + "/pki/public_keys/";
     private static String userDir;
     private final String userName;
     private final PublicKey publicRSAKey;
@@ -45,17 +43,17 @@ public class Client {
         this.publicRSAKey = keyPair.getPublic ( );
         isConnected = true; // TODO: Check if this is necessary or if it should be controlled
         // Create a temporary directory for putting the request files
-        FileHandler fileHandler = new FileHandler ( );
+
+        this.receiverPublicRSAKey = rsaKeyDistribution ( );
+
+        //TODO : Create a function that to the following actions
         userDir = FileManager.validateFile(userName);
         FileManager.createFile( userDir + "/../", "config.config", "server.request = 5");
-        receiverPublicRSAKey = rsaKeyDistribution ( );
         Properties pro = FileManager.getProperties(userDir + "/../");
-        FileManager.createFile( pkiDir, userName + "PuK.txt", this.publicRSAKey.toString());
+        FileManager.createFile( pkiDir, this.userName + "PuK.txt", this.publicRSAKey.toString());
         FileManager.createFile( userDir + "/../", "private.txt", this.privateRSAKey.toString());
 
     }
-
-
 
 
     /**

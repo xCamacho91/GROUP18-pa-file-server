@@ -8,7 +8,7 @@
 # DIRECTORY
 .idea/*
 .users/*
-.pki/public_keys/*
+.pki/public_keys/*.txt
 
 # User-specific stuff
 .idea/**/workspace.xml
