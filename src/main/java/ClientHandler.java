@@ -79,13 +79,14 @@ public class ClientHandler extends Thread {
         int numPacotes = (content.length + tamanhoMax - 1) / tamanhoMax; //calcula numero de pacotes
 
         for (int i = 0; i < numPacotes; i++) {
-            int outtu = i * tamanhoMax;
-            int compri = Math.min(tamanhoMax, content.length - outtu);
+            int outtu = i * tamanhoMax; //intervalos de cada conteudo. 0-1024-2048...
+            System.out.println(outtu);
+            int compri = Math.min(tamanhoMax, content.length - outtu); //tamanho de cada pacote
             byte[] pacote = new byte[compri];
             System.arraycopy(content, outtu, pacote, 0, compri);
 
             byte[] digest = Integrity.generateDigest(pacote);
-            System.out.println("Content: " + new String(content, StandardCharsets.UTF_8));
+            System.out.println("Content: " + new String(pacote, StandardCharsets.UTF_8));
             byte[] encryptedMessage = Encryption.encryptMessage(pacote, sharedSecret.toByteArray());
 
             //Cria o pacote com a mensagem e outras infos (nr da mensagem, se é a ultima...)
