@@ -21,6 +21,8 @@ public class Client {
     private final String pkiDir = System.getProperty("user.dir") + "/pki/public_keys/";
     private static String userDir;
     private final String userName;
+    private int requestsMade = 0; //number of requests
+    private static final int MAX_REQUESTS = 5; //max of requests before new handshake
     private final PublicKey publicRSAKey;
     private final PrivateKey privateRSAKey;
     private final PublicKey receiverPublicRSAKey;
@@ -66,16 +68,40 @@ public class Client {
             // Agree on a shared secret
             BigInteger sharedSecret = agreeOnSharedSecret ( receiverPublicRSAKey );
             while ( isConnected ) {
-                // Reads the message to extract the path of the file
-                System.out.println ( "Write the path of the file" );
-                String request = usrInput.nextLine ( );
-                // Request the file
-                sendMessage ( request , sharedSecret);
-                // Waits for the response
-                processResponse ( RequestUtils.getFileNameFromRequest ( request ) , sharedSecret);
+                saveConfig();
+                if (requestsMade+1 >= MAX_REQUESTS){
+
+                    //responde ao pedido pq é o quinto
+                    System.out.println("Request number: "+ requestsMade);
+                    // Reads the message to extract the path of the file
+                    System.out.println ( "Write the path of the file" );
+                    String request = usrInput.nextLine ( );
+                    // Request the file
+                    sendMessage ( request , sharedSecret);
+                    // Waits for the response
+                    processResponse ( RequestUtils.getFileNameFromRequest ( request ) , sharedSecret);
+
+                    System.out.println("Reached 5 requests, making new handshake");
+                    requestsMade=0;
+                    //sair daqui, fazer novo handshake
+
+
+                }else{
+                    System.out.println("Request number: "+ requestsMade);
+                    // Reads the message to extract the path of the file
+                    System.out.println ( "Write the path of the file" );
+                    String request = usrInput.nextLine ( );
+                    // Request the file
+                    sendMessage ( request , sharedSecret);
+                    // Waits for the response
+                    processResponse ( RequestUtils.getFileNameFromRequest ( request ) , sharedSecret);
+                    requestsMade++; //nao sei depois como será feito. incrementar so depois de ele meter o input, senao vai contar como pedido ele escrever quit para sair da sessao
+                }
+
             }
-            // Close connection
             closeConnection ( );
+            //closeConnection ( );
+        } catch ( IOException e ) {
         } catch (Exception e ) {
             throw new RuntimeException ( e );
         }
@@ -103,6 +129,7 @@ public class Client {
                 // TODO show the content of the file in the console
             }
         } catch ( IOException | ClassNotFoundException e ) {
+                //requestsMade--;
             System.out.println ( "ERROR - FILE NOT FOUND" );
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -131,7 +158,7 @@ public class Client {
     /**
      * Closes the connection by closing the socket and the streams.
      */
-    private void closeConnection ( ) {
+    public void closeConnection ( ) {
         try {
             client.close ( );
             out.close ( );
@@ -197,4 +224,34 @@ public class Client {
         out.writeObject ( publicRSAKey );
         out.flush ( );
     }
+    /**
+     * Saving in txt file's the number o requests of each client
+     * @throws IOException
+     */
+    public void saveConfig() throws IOException {
+        {
+            try {
+                File dir = new File("config");
+                if (!dir.exists()) {
+                    dir.mkdirs();
+                }
+                File file = new File(dir, this.userName + ".txt");
+                PrintWriter writer = new PrintWriter(file);
+                writer.println(this.requestsMade);
+                writer.close();
+                requestsMade=this.requestsMade;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * used for tests
+     * @return
+     */
+    public int getRequestsMade() {
+        return requestsMade;
+    }
+
 }

@@ -18,6 +18,7 @@ public class ClientHandler extends Thread {
     private final ObjectOutputStream out;
     private final Socket client;
     private final boolean isConnected;
+    private int requestCount = 0; //each client request count
     private final PrivateKey privateRSAKey;
     private final PublicKey publicRSAKey;
 
