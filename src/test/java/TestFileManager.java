@@ -4,6 +4,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Properties;
+import java.util.Scanner;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -58,45 +59,73 @@ public class TestFileManager {
     }
 
     @Test
-    void testGetProperties() throws IOException {
-        // Create a temporary directory to hold the config file
-        String userDir = System.getProperty("java.io.tmpdir") + File.separator + "test-dir";
-        File tempDir = new File(userDir);
-        tempDir.mkdir();
+    public void testGetConfigFile() {
+        // Set up test data
+        String userDir = System.getProperty("user.dir") + File.separator + "config";
+        String configFile = userDir + File.separator + "config.txt";
+        int requestsMade = 5;
+        // Create config file
+        try {
+            FileWriter writer = new FileWriter(configFile);
+            writer.write(String.valueOf(requestsMade));
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-        // Create a test config file in the temporary directory
-        String configPath = userDir + File.separator + "config.config";
-        String configContent = "key1=value1\nkey2=value2";
-        FileWriter writer = new FileWriter(configPath);
-        writer.write(configContent);
-        writer.close();
+        // Call method and assert result
+        int result = FileManager.getConfigFile(configFile);
+        assertEquals(requestsMade, result);
 
-        // Test the getProperties method
-        Properties props = FileManager.getProperties(userDir);
-        assertEquals(props.getProperty("key1"), "value1");
-        assertEquals(props.getProperty("key2"), "value2");
+        // Clean up test data
+        File file = new File(configFile);
+        file.delete();
+        File folder = new File(userDir);
+        folder.delete();
+    }
 
-        // Clean up the temporary directory
-        tempDir.delete();
+    @Test
+    public void testSaveConfigFile() {
+        // Set up test inputs
+        String userName = "testuser";
+        int requestsMade = 10;
+
+        // Call the method to be tested
+        FileManager.saveConfigFile(userName, requestsMade);
+
+        // Verify that the file was created and contains the expected content
+        File configFile = new File("config/" + userName + ".txt");
+        assertTrue(configFile.exists());
+        try (Scanner scanner = new Scanner(configFile)) {
+            int actualRequestsMade = scanner.nextInt();
+            assertEquals(requestsMade, actualRequestsMade);
+        } catch (FileNotFoundException e) {
+            fail("Config file not found: " + e.getMessage());
+        }
+
+        // Clean up test environment
+        configFile.delete();
+        File configDir = new File("config");
+        configDir.delete();
     }
 
     @Test
     public void testDisplayFile() throws IOException {
-        // Create a test file with some content
-        String userName = "testuser";
-        String expectedPath = System.getProperty("user.dir") + File.separator + "users\\" + userName + File.separator;
-        String testPath = "test.txt";
-        String testContent = "This is a test file.\nIt has some text in it.\n";
-        FileManager.createFile(expectedPath, testPath, testContent);
+        // create a test file
+        String fileName = "test_file.txt";
+        String content = "Hello, world!\nThis is a test file.";
+        File file = new File(fileName);
+        FileWriter writer = new FileWriter(file);
+        writer.write(content);
+        writer.close();
 
-        // Call the displayFile method on the test file
-        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outContent));
-        String expectedOutput = "FILE CONTENT:\n" + FileManager.displayFile(expectedPath + "\\" + testPath);
-        assertTrue(!expectedOutput.isEmpty());
+        // call the method and check the output
+        String output = FileManager.displayFile(fileName);
+        String expectedOutput = "Hello, world!\nThis is a test file.\n";
+        assertEquals(expectedOutput, output);
 
-        // Delete the test file
-        File testFile = new File(testPath);
-        testFile.delete();
+        // delete the test file
+        file.delete();
     }
+
 }
