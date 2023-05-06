@@ -1,10 +1,6 @@
 import java.io.*;
 import java.math.BigInteger;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -26,11 +22,12 @@ public class Client {
     private final String pkiDir = System.getProperty("user.dir") + "/pki/public_keys/";
     private static String userDir;
     private final String userName;
-    private int requestsMade = 0; //number of requests
-    private static final int MAX_REQUESTS = 5; //max of requests before new handshake
-    private final PublicKey publicRSAKey;
-    private final PrivateKey privateRSAKey;
-    private final PublicKey receiverPublicRSAKey;
+    private static int requestsMade = 0; //number of requests
+    private final int MAX_REQUESTS = 5; //max of requests before new handshake
+    private static PublicKey publicRSAKey;
+    private static PrivateKey privateRSAKey;
+    private static PublicKey receiverPublicRSAKey;
+    private static BigInteger sharedSecret;
 
     /**
      * Constructs a Client object by specifying the port to connect to. The socket must be created before the sender can
@@ -45,21 +42,29 @@ public class Client {
         this.userName = userName;
         out = new ObjectOutputStream ( client.getOutputStream ( ) );
         in = new ObjectInputStream ( client.getInputStream ( ) );
-        KeyPair keyPair = Encryption.generateKeyPair ( );
-        this.privateRSAKey = keyPair.getPrivate ( );
-        this.publicRSAKey = keyPair.getPublic ( );
         isConnected = true; // TODO: Check if this is necessary or if it should be controlled
         // Create a temporary directory for putting the request files
 
+        KeyPair keyPair = Encryption.generateKeyPair ( );
+        this.privateRSAKey = keyPair.getPrivate ( );
+        this.publicRSAKey = keyPair.getPublic ( );
         this.receiverPublicRSAKey = rsaKeyDistribution ( );
+        this.sharedSecret = agreeOnSharedSecret ( receiverPublicRSAKey );
 
-        //TODO : Create a function that to the following actions
+        validateDetailsUser();
+    }
+
+    /**
+     *  Creates the files for the user and validates the user
+     *
+     * @throws Exception
+     */
+    private void validateDetailsUser() throws Exception {
         userDir = FileManager.validateFile(userName);
-        FileManager.createFile( userDir + "/../", "config.config", "server.request = 5");
-        Properties pro = FileManager.getProperties(userDir + "/../");
         FileManager.createFile( pkiDir, this.userName + "PuK.txt", this.publicRSAKey.toString());
         FileManager.createFile( userDir + "/../", "private.txt", this.privateRSAKey.toString());
 
+        FileManager.getConfigFile("config/" +userName + ".txt");
     }
 
 
@@ -71,48 +76,50 @@ public class Client {
         Scanner usrInput = new Scanner ( System.in );
         try {
             // Agree on a shared secret
-            BigInteger sharedSecret = agreeOnSharedSecret ( receiverPublicRSAKey );
             while ( isConnected ) {
-                saveConfig();
-                if (requestsMade+1 >= MAX_REQUESTS){
+                FileManager.saveConfigFile(this.userName, this.requestsMade);
+                checkRequest();
+                System.out.println("Request number: "+ this.requestsMade);
+                // Reads the message to extract the path of the file
+                System.out.println ( "Write the path of the file" );
+                String request = usrInput.nextLine ( );
+                // Request the file
+                sendMessage ( request , this.sharedSecret);
+                // Waits for the response
 
-                    //responde ao pedido pq é o quinto
-                    System.out.println("Request number: "+ requestsMade);
-                    // Reads the message to extract the path of the file
-                    System.out.println ( "Write the path of the file" );
-                    String request = usrInput.nextLine ( );
-                    // Request the file
-                    sendMessage ( request , sharedSecret);
-                    // Waits for the response
-                    processResponse ( RequestUtils.getFileNameFromRequest ( request ) , sharedSecret);
-
-                    System.out.println("Reached 5 requests, making new handshake");
-                    requestsMade=0;
-                    //sair daqui, fazer novo handshake
-
-
-                }else{
-                    System.out.println("Request number: "+ requestsMade);
-                    // Reads the message to extract the path of the file
-                    System.out.println ( "Write the path of the file" );
-                    String request = usrInput.nextLine ( );
-                    // Request the file
-                    sendMessage ( request , sharedSecret);
-                    // Waits for the response
-                    processResponse ( RequestUtils.getFileNameFromRequest ( request ) , sharedSecret);
-                    requestsMade++; //nao sei depois como será feito. incrementar so depois de ele meter o input, senao vai contar como pedido ele escrever quit para sair da sessao
+                try {
+                    processResponse ( RequestUtils.getFileNameFromRequest ( request ) , this.sharedSecret);
+                } catch (IllegalArgumentException e ) {
+                    System.out.println("ERROR - FORMAT IS INVALID");
                 }
-
             }
             closeConnection ( );
-            //closeConnection ( );
-        } catch ( IOException e ) {
         } catch (Exception e ) {
             throw new RuntimeException ( e );
         }
         // Close connection
         closeConnection ( );
     }
+
+    /**
+     * Checks if the client has no more requests to make
+     */
+    private void checkRequest () {
+
+        if (requestsMade+1 >= MAX_REQUESTS) {
+            System.out.println("Reached 5 requests, making new handshake");
+            //try {
+                //this.sharedSecret = agreeOnSharedSecret ( this.receiverPublicRSAKey );
+            // catch (Exception e) {
+                //System.out.println ( "Impossivel gerar novo handshake" );
+            //}
+            this.requestsMade = 0;
+        } else {
+            this.requestsMade++; //nao sei depois como será feito. incrementar so depois de ele meter o input, senao vai contar como pedido ele escrever quit para sair da sessao
+        }
+    }
+
+
 
     /**
      * Reads the response from the server and writes the file to the temporary directory.
@@ -128,15 +135,11 @@ public class Client {
 
             while (true) {
                 Message response = (Message) in.readObject();
-
                 if (response.getMessageNumber() == 1) { //verifica se é a 1 mensagem, se for guarda o total de mensagens
                     expectedPackets = response.getTotalMessages();
                 }
-
                 byte[] decryptedMessage = Encryption.decryptMessage(response.getMessage(), sharedSecret.toByteArray());
-
                 if(!Integrity.verifyDigest(response.getSignature(),Integrity.generateDigest(decryptedMessage))) {
-
                     throw new RuntimeException("The integrity of the message is not verified");
                 }
                 listaPacotes.add(decryptedMessage);
@@ -147,15 +150,9 @@ public class Client {
 
                     FileHandler.writeFile(userDir + "/" + fileName, content);
                     System.out.println( FileManager.displayFile(userDir + "/" + fileName) );
-                    // TODO show the content of the file in the console
                     break;
                 }
-
             }
-        } catch ( IOException | ClassNotFoundException e ) {
-                //requestsMade--;
-
-
         } catch (Exception e ) {
             System.out.println ( "ERROR - FILE NOT FOUND" );
         }
@@ -263,27 +260,7 @@ public class Client {
         out.writeObject ( publicRSAKey );
         out.flush ( );
     }
-    /**
-     * Saving in txt file's the number o requests of each client
-     * @throws IOException
-     */
-    public void saveConfig() throws IOException {
-        {
-            try {
-                File dir = new File("config");
-                if (!dir.exists()) {
-                    dir.mkdirs();
-                }
-                File file = new File(dir, this.userName + ".txt");
-                PrintWriter writer = new PrintWriter(file);
-                writer.println(this.requestsMade);
-                writer.close();
-                requestsMade=this.requestsMade;
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
+
 
     /**
      * used for tests
