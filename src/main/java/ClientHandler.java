@@ -3,9 +3,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.net.Socket;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 
@@ -19,7 +16,6 @@ public class ClientHandler extends Thread {
     private final ObjectOutputStream out;
     private final Socket client;
     private final boolean isConnected;
-    private int requestCount = 0; //each client request count
     private final PrivateKey privateRSAKey;
     private final PublicKey publicRSAKey;
 
@@ -80,18 +76,14 @@ public class ClientHandler extends Thread {
     private void sendFile ( byte[] content , BigInteger sharedSecret) throws Exception {
         int tamanhoMax = 1024; // tamanho pacote 1024kb
         int numPacotes = (content.length + tamanhoMax - 1) / tamanhoMax; //calcula numero de pacotes
-
         for (int i = 0; i < numPacotes; i++) {
             int outtu = i * tamanhoMax; //intervalos de cada conteudo. 0-1024-2048...
             System.out.println(outtu);
             int compri = Math.min(tamanhoMax, content.length - outtu); //tamanho de cada pacote
             byte[] pacote = new byte[compri];
             System.arraycopy(content, outtu, pacote, 0, compri);
-
             byte[] digest = Integrity.generateDigest(pacote);
-
             byte[] encryptedMessage = Encryption.encryptMessage(pacote, sharedSecret.toByteArray());
-
             //Cria o pacote com a mensagem e outras infos (nr da mensagem, se é a ultima...)
             Message response;
             if(i== numPacotes-1){  //verifica se é o ultimo pacote ou nao
@@ -102,11 +94,6 @@ public class ClientHandler extends Thread {
             out.writeObject(response);
             out.flush();
         }
-        //byte[] digest = Integrity.generateDigest ( content );
-        //byte[] encryptedMessage = Encryption.encryptMessage(content, sharedSecret.toByteArray());
-        //Message response = new Message ( encryptedMessage , digest);
-        //out.writeObject ( response );
-        //out.flush ( );
     }
 
     /**
