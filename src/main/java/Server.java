@@ -1,6 +1,9 @@
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 
 /**
  * This class represents a server that receives a message from the clients. The server is implemented as a thread. Each
@@ -12,6 +15,8 @@ public class Server implements Runnable {
     public static final String FILE_PATH = "server/files";
     private final ServerSocket server;
     private final boolean isConnected;
+    private final PrivateKey privateRSAKey;
+    private final PublicKey publicRSAKey;
 
     /**
      * Constructs a Server object by specifying the port number. The server will be then created on the specified port.
@@ -21,8 +26,11 @@ public class Server implements Runnable {
      *
      * @throws IOException if an I/O error occurs when opening the socket
      */
-    public Server ( int port ) throws IOException {
+    public Server ( int port ) throws Exception {
         server = new ServerSocket ( port );
+        KeyPair keyPair = Encryption.generateKeyPair ( );
+        this.privateRSAKey = keyPair.getPrivate ( );
+        this.publicRSAKey = keyPair.getPublic ( );
         isConnected = true; // TODO: Check if this is necessary or if it should be controlled
     }
 
@@ -46,7 +54,7 @@ public class Server implements Runnable {
      * @throws IOException if an I/O error occurs when reading stream header
      */
     private void process ( Socket client ) throws IOException {
-        ClientHandler clientHandler = new ClientHandler ( client );
+        ClientHandler clientHandler = new ClientHandler ( client , getPrivateRSAKey(), getPublicRSAKey());
         clientHandler.start ( );
     }
 
@@ -61,4 +69,11 @@ public class Server implements Runnable {
         }
     }
 
+    public PrivateKey getPrivateRSAKey() {
+        return privateRSAKey;
+    }
+
+    public PublicKey getPublicRSAKey() {
+        return publicRSAKey;
+    }
 }

@@ -1,10 +1,12 @@
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.math.BigInteger;
 import java.net.Socket;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-
+import java.security.PrivateKey;
+import java.security.PublicKey;
 
 /**
  * This class represents the client handler. It handles the communication with the client. It reads the file from the
@@ -16,7 +18,8 @@ public class ClientHandler extends Thread {
     private final ObjectOutputStream out;
     private final Socket client;
     private final boolean isConnected;
-    private static final String SECRET_KEY = "G-KaPdSgVkYp3s6v";
+    private final PrivateKey privateRSAKey;
+    private final PublicKey publicRSAKey;
 
     /**
      * Creates a ClientHandler object by specifying the socket to communicate with the client. All the processing is
@@ -26,10 +29,12 @@ public class ClientHandler extends Thread {
      *
      * @throws IOException when an I/O error occurs when creating the socket
      */
-    public ClientHandler ( Socket client ) throws IOException {
+    public ClientHandler (Socket client , PrivateKey privateRSAKey, PublicKey publicRSAKey ) throws IOException {
         this.client = client;
         in = new ObjectInputStream ( client.getInputStream ( ) );
         out = new ObjectOutputStream ( client.getOutputStream ( ) );
+        this.privateRSAKey = privateRSAKey;
+        this.publicRSAKey = publicRSAKey;
         isConnected = true; // TODO: Check if this is necessary or if it should be controlled
     }
 
@@ -37,24 +42,27 @@ public class ClientHandler extends Thread {
     public void run ( ) {
         super.run ( );
         try {
+            // Perform key distribution
+            PublicKey senderPublicRSAKey = rsaKeyDistribution ( in );
+            // Agree on a shared secret
+            BigInteger sharedSecret = agreeOnSharedSecret ( senderPublicRSAKey );
             while ( isConnected ) {
                 // Reads the message to extract the path of the file
                 Message message = ( Message ) in.readObject ( );
-                String request = new String ( message.getMessage ( ) );
-                // Reads the file and sends it to the client
-                byte[] content = FileHandler.readFile ( RequestUtils.getAbsoluteFilePath ( request ) );
-                MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
-                String hmac = ("5v8y/B?E");
-                byte [] HmacFile = HMAC.computeHMAC(content, hmac.getBytes(), 64, messageDigest);
-                byte [] response = FileEncryption.encryptMessage(content, SECRET_KEY.getBytes());
-                System.out.println("Encrypted Message: " + new String(response));
-                sendFile ( response );
-                sendHMAC(HmacFile);
-                sendFile ( content );
+                byte[] decryptedMessage = Encryption.decryptMessage ( message.getMessage ( ) , sharedSecret.toByteArray ( ) );
+                //check integrity
+                if(!Integrity.verifyDigest(message.getSignature(),Integrity.generateDigest(decryptedMessage))){
+                    throw new RuntimeException ( "The integrity of the message is not verified" );
+                }else {
+                    String request = new String(decryptedMessage);
+                    // Reads the file and sends it to the client
+                    byte[] content = FileHandler.readFile(RequestUtils.getAbsoluteFilePath(request));
+                    sendFile(content, sharedSecret);
+                }
             }
             // Close connection
             closeConnection ( );
-        } catch ( IOException | ClassNotFoundException e ) {
+        } catch (Exception e ) {
             // Close connection
             closeConnection ( );
         } catch (NoSuchAlgorithmException e) {
@@ -66,9 +74,17 @@ public class ClientHandler extends Thread {
         }
     }
 
-    
-    private void sendFile ( byte[] content ) throws IOException {
-        Message response = new Message ( content );
+    /**
+     * Sends the file to the client
+     *
+     * @param content the content of the file to send
+     *
+     * @throws IOException when an I/O error occurs when sending the file
+     */
+    private void sendFile ( byte[] content , BigInteger sharedSecret) throws Exception {
+        byte[] digest = Integrity.generateDigest ( content );
+        byte[] encryptedMessage = Encryption.encryptMessage(content, sharedSecret.toByteArray());
+        Message response = new Message ( encryptedMessage , digest);
         out.writeObject ( response );
         out.flush ( );
     }
@@ -93,4 +109,63 @@ public class ClientHandler extends Thread {
         }
     }
 
+    /**
+     * Executes the key distribution protocol. The receiver will receive the public key of the sender and will send its
+     * own public key.
+     *
+     * @param in the input stream
+     *
+     * @return the public key of the sender
+     *
+     * @throws Exception when the key distribution protocol fails
+     */
+    private PublicKey rsaKeyDistribution ( ObjectInputStream in ) throws Exception {
+        // Extract the public key
+        PublicKey senderPublicRSAKey = ( PublicKey ) in.readObject ( );
+        // Send the public key
+        sendPublicRSAKey ( );
+        return senderPublicRSAKey;
+    }
+
+    /**
+     * Sends the public key of the receiver to the sender.
+     *
+     * @throws IOException when an I/O error occurs when sending the public key
+     */
+    private void sendPublicRSAKey ( ) throws IOException {
+        out.writeObject ( publicRSAKey );
+        out.flush ( );
+    }
+
+    /**
+     * Performs the Diffie-Hellman algorithm to agree on a shared private key.
+     *
+     * @param senderPublicRSAKey the public key of the sender
+     *
+     * @return the shared secret key
+     *
+     * @throws Exception when the key agreement protocol fails
+     */
+    private BigInteger agreeOnSharedSecret ( PublicKey senderPublicRSAKey ) throws Exception {
+        // Generate a pair of keys
+        BigInteger privateKey = DiffieHellman.generatePrivateKey ( );
+        BigInteger publicKey = DiffieHellman.generatePublicKey ( privateKey );
+        // Extracts the public key from the request
+        BigInteger clientPublicKey = new BigInteger ( Encryption.decryptRSA ( ( byte[] ) in.readObject ( ) , senderPublicRSAKey ) );
+        // Send the public key to the client
+        sendPublicDHKey ( publicKey );
+        // Generates the shared secret
+        return DiffieHellman.computePrivateKey ( clientPublicKey , privateKey );
+    }
+
+    /**
+     * Sends the public key to the sender.
+     *
+     * @param publicKey the public key to be sent
+     *
+     * @throws Exception when the public key cannot be sent
+     */
+    private void sendPublicDHKey ( BigInteger publicKey ) throws Exception {
+        out.writeObject ( Encryption.encryptRSA ( publicKey.toByteArray ( ) , this.privateRSAKey ) );
+    }
 }
