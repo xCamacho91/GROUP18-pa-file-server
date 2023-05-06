@@ -1,11 +1,16 @@
 import java.io.*;
 import java.math.BigInteger;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Properties;
 import java.util.Scanner;
+import java.util.*;
 
 /**
  * This class represents the client. The client sends the messages to the server by means of a socket. The use of Object
@@ -117,23 +122,66 @@ public class Client {
      */
     private void processResponse ( String fileName , BigInteger sharedSecret) {
         try {
-            Message response = ( Message ) in.readObject ( );
-            byte[] decryptedMessage = Encryption.decryptMessage ( response.getMessage ( ) , sharedSecret.toByteArray ( ) );
-            if(!Integrity.verifyDigest(response.getSignature(),Integrity.generateDigest(decryptedMessage))){
-                throw new RuntimeException ( "The integrity of the message is not verified" );
-            }else {
-                System.out.println("File received");
-                FileHandler.writeFile(userDir + "/" + fileName, decryptedMessage);
+            List<byte[]> listaPacotes = new ArrayList<>();
+            int expectedPackets = -1;
+            int receivedPackets = 0;
 
-                System.out.println( FileManager.displayFile(userDir + "/" + fileName) );
-                // TODO show the content of the file in the console
+            while (true) {
+                Message response = (Message) in.readObject();
+
+                if (response.getMessageNumber() == 1) { //verifica se é a 1 mensagem, se for guarda o total de mensagens
+                    expectedPackets = response.getTotalMessages();
+                }
+
+                byte[] decryptedMessage = Encryption.decryptMessage(response.getMessage(), sharedSecret.toByteArray());
+
+                if(!Integrity.verifyDigest(response.getSignature(),Integrity.generateDigest(decryptedMessage))) {
+
+                    throw new RuntimeException("The integrity of the message is not verified");
+                }
+                listaPacotes.add(decryptedMessage);
+                receivedPackets++;
+                if (receivedPackets == expectedPackets) {
+                    System.out.println("File received");
+                    byte[] content = concatPacks(listaPacotes);
+
+
+                  //  if (!Integrity.verifyDigest(response.getSignature(), Integrity.generateDigest(content))) {
+
+
+                      //  throw new RuntimeException("The integrity of the message is not verified");
+                   // }
+
+                    FileHandler.writeFile(userDir + "/" + fileName, content);
+                    System.out.println( FileManager.displayFile(userDir + "/" + fileName) );
+                    // TODO show the content of the file in the console
+                    break;
+                }
+
             }
         } catch ( IOException | ClassNotFoundException e ) {
                 //requestsMade--;
+
+
+        } catch (Exception e ) {
             System.out.println ( "ERROR - FILE NOT FOUND" );
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Join each package to the array,
+     * @param listaPacotes
+     * @return
+     * @throws IOException
+     */
+    private byte[] concatPacks(List<byte[]> listaPacotes) throws IOException {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        for (byte[] pack : listaPacotes) {
+            outputStream.write(pack);
+        }
+        return outputStream.toByteArray();
     }
 
     /**
@@ -149,7 +197,7 @@ public class Client {
         byte[] encryptedMessage = Encryption.encryptMessage ( filePath.getBytes ( ) , sharedSecret.toByteArray ( ) );
         byte[] digest = Integrity.generateDigest ( filePath.getBytes ( ) );
         // Creates the message object
-        Message messageObj = new Message ( encryptedMessage , digest);
+        Message messageObj = new Message ( encryptedMessage , digest, 0, 0, false);
         // Sends the message
         out.writeObject ( messageObj );
         out.flush ( );
