@@ -19,6 +19,8 @@ public class Client {
     private final ObjectOutputStream out;
     private final boolean isConnected;
     private static String pkiDir = System.getProperty("user.dir") + "/pki/public_keys/";
+    //private final String userDir;
+    private static final String SECRET_KEY = "G-KaPdSgVkYp3s6v";
     private static String userDir;
     private final String userName;
     private final PublicKey publicRSAKey;

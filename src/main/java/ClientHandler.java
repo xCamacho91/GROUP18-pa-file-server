@@ -3,6 +3,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.net.Socket;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 
@@ -80,7 +82,6 @@ public class ClientHandler extends Thread {
         out.writeObject ( response );
         out.flush ( );
     }
-
 
     /**
      * Closes the connection by closing the socket and the streams.
