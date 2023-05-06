@@ -94,7 +94,6 @@ public class ClientHandler extends Thread {
             }else{
                 response = new Message(encryptedMessage, digest, i+1, numPacotes, false);
             }
-
             out.writeObject(response);
             out.flush();
         }

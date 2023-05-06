@@ -122,24 +122,27 @@ public class Client {
                 }
 
                 byte[] decryptedMessage = Encryption.decryptMessage(response.getMessage(), sharedSecret.toByteArray());
-                if(!Integrity.verifyDigest(response.getSignature(),Integrity.generateDigest(decryptedMessage))) {
+               // if(!Integrity.verifyDigest(response.getSignature(),Integrity.generateDigest(decryptedMessage))) {
 
-                    throw new RuntimeException("The integrity of the message is not verified");
-                }
+                 //   throw new RuntimeException("The integrity of the message is not verified");
+                //}
                 listaPacotes.add(decryptedMessage);
-
                 receivedPackets++;
                 if (receivedPackets == expectedPackets) {
+                    System.out.println("File received");
+                    byte[] content = concatPacks(listaPacotes);
 
+                    if (!Integrity.verifyDigest(response.getSignature(), Integrity.generateDigest(decryptedMessage))) {
+                        throw new RuntimeException("The integrity of the message is not verified");
+                    }
+
+                    FileHandler.writeFile(userDir + "/" + fileName, content);
+                    FileHandler.displayFile(userDir + "/" + fileName);
                     break;
                 }
 
             }
-            System.out.println("File received");
-            byte[] content = concatPacks(listaPacotes);
 
-            FileHandler.writeFile(userDir + "/" + fileName, content);
-            FileHandler.displayFile(userDir + "/" + fileName);
 
         } catch (Exception e ) {
             System.out.println ( "ERROR - FILE NOT FOUND" );
