@@ -86,7 +86,7 @@ public class ClientHandler extends Thread {
             System.arraycopy(content, outtu, pacote, 0, compri);
 
             byte[] digest = Integrity.generateDigest(pacote);
-            System.out.println("Content: " + new String(pacote, StandardCharsets.UTF_8));
+
             byte[] encryptedMessage = Encryption.encryptMessage(pacote, sharedSecret.toByteArray());
 
             //Cria o pacote com a mensagem e outras infos (nr da mensagem, se é a ultima...)

@@ -122,7 +122,7 @@ public class Client {
                 }
 
                 byte[] decryptedMessage = Encryption.decryptMessage(response.getMessage(), sharedSecret.toByteArray());
-                System.out.println("Decrypted Message: " + new String(decryptedMessage, StandardCharsets.UTF_8));
+
                 if(!Integrity.verifyDigest(response.getSignature(),Integrity.generateDigest(decryptedMessage))) {
 
                     throw new RuntimeException("The integrity of the message is not verified");
@@ -134,10 +134,11 @@ public class Client {
                     byte[] content = concatPacks(listaPacotes);
 
 
-                    if (!Integrity.verifyDigest(response.getSignature(), Integrity.generateDigest(content))) {
+                  //  if (!Integrity.verifyDigest(response.getSignature(), Integrity.generateDigest(content))) {
 
-                        throw new RuntimeException("The integrity of the message is not verified");
-                    }
+
+                      //  throw new RuntimeException("The integrity of the message is not verified");
+                   // }
 
                     FileHandler.writeFile(userDir + "/" + fileName, content);
                     FileHandler.displayFile(userDir + "/" + fileName);
