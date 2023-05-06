@@ -3,6 +3,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.net.Socket;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 
@@ -63,6 +65,12 @@ public class ClientHandler extends Thread {
         } catch (Exception e ) {
             // Close connection
             closeConnection ( );
+        } catch (NoSuchAlgorithmException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
     }
 
@@ -78,6 +86,12 @@ public class ClientHandler extends Thread {
         byte[] encryptedMessage = Encryption.encryptMessage(content, sharedSecret.toByteArray());
         Message response = new Message ( encryptedMessage , digest);
         out.writeObject ( response );
+        out.flush ( );
+    }
+
+    private void sendHMAC ( byte[] content ) throws IOException {
+        Message Hmac = new Message ( content );
+        out.writeObject ( Hmac );
         out.flush ( );
     }
 
