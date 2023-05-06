@@ -145,13 +145,6 @@ public class Client {
                     System.out.println("File received");
                     byte[] content = concatPacks(listaPacotes);
 
-
-                  //  if (!Integrity.verifyDigest(response.getSignature(), Integrity.generateDigest(content))) {
-
-
-                      //  throw new RuntimeException("The integrity of the message is not verified");
-                   // }
-
                     FileHandler.writeFile(userDir + "/" + fileName, content);
                     System.out.println( FileManager.displayFile(userDir + "/" + fileName) );
                     // TODO show the content of the file in the console
@@ -165,8 +158,6 @@ public class Client {
 
         } catch (Exception e ) {
             System.out.println ( "ERROR - FILE NOT FOUND" );
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         }
     }
 
