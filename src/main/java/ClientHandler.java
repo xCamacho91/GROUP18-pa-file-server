@@ -65,12 +65,6 @@ public class ClientHandler extends Thread {
         } catch (Exception e ) {
             // Close connection
             closeConnection ( );
-        } catch (NoSuchAlgorithmException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         }
     }
 
@@ -88,13 +82,6 @@ public class ClientHandler extends Thread {
         out.writeObject ( response );
         out.flush ( );
     }
-
-    private void sendHMAC ( byte[] content ) throws IOException {
-        Message Hmac = new Message ( content );
-        out.writeObject ( Hmac );
-        out.flush ( );
-    }
-
 
     /**
      * Closes the connection by closing the socket and the streams.
