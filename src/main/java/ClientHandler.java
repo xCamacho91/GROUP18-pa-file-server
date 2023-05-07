@@ -85,12 +85,11 @@ public class ClientHandler extends Thread {
             byte[] digest = Integrity.generateDigest(pacote);
             byte[] encryptedMessage = Encryption.encryptMessage(pacote, sharedSecret.toByteArray());
             //Cria o pacote com a mensagem e outras infos (nr da mensagem, se é a ultima...)
-            Message response;
-            if(i== numPacotes-1){  //verifica se é o ultimo pacote ou nao
-                response = new Message(encryptedMessage, digest, i+1, numPacotes, true);
-            }else{
-                response = new Message(encryptedMessage, digest, i+1, numPacotes, false);
-            }
+
+           boolean isLast=(i==numPacotes-1);
+
+            Message  response = new Message(encryptedMessage, digest, i+1, numPacotes, isLast);
+
             out.writeObject(response);
             out.flush();
         }
