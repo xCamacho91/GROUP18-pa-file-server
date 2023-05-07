@@ -61,7 +61,7 @@ public class Client {
      */
     private void validateDetailsUser() throws Exception {
         userDir = FileManager.validateFile(userName);
-        FileManager.createFile( pkiDir, this.userName + "PuK.txt", this.publicRSAKey.toString());
+        FileManager.createFile( pkiDir, this.userName + "PuK.key", this.publicRSAKey.toString());
         FileManager.createFile( userDir + "/../", "private.txt", this.privateRSAKey.toString());
 
         FileManager.getConfigFile("config/" +userName + ".txt");
