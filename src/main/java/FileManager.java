@@ -1,12 +1,8 @@
 import java.io.*;
 import java.util.Properties;
+import java.util.Scanner;
 
 public class FileManager {
-
-    /**
-     * The server's configuration, imported from the configuration file when the server started.
-     */
-    private static Properties serverConfig;
 
     /**
      * Displays the content of a text file in the console.
@@ -48,15 +44,34 @@ public class FileManager {
      * @param userDir
      * @return
      */
-    public static Properties getProperties(String userDir) {
+    public static int getConfigFile(String userDir) {
+        File configFile = new File(userDir);
+        int requestsMade = 0;
+        if (configFile.exists()) {
+            try (Scanner scanner = new Scanner(configFile)) {
+                requestsMade = scanner.nextInt();
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return requestsMade;
+    }
+
+    /**
+     * Saving in txt file's the number o requests of each client
+     */
+    public static void saveConfigFile(String userName, int requestsMade) {
         try {
-            serverConfig = new Properties();
-            InputStream configPathInputStream = new FileInputStream(userDir + "/config.config");
-            serverConfig.load(configPathInputStream);
-            return serverConfig;
+            File dir = new File("config");
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+            File file = new File(dir, userName + ".txt");
+            PrintWriter writer = new PrintWriter(file);
+            writer.println(requestsMade);
+            writer.close();
         } catch (IOException e) {
-            System.out.println("Config file not found.");
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
     }
 
