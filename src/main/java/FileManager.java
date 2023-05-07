@@ -46,15 +46,14 @@ public class FileManager {
      */
     public static int getConfigFile(String userDir) {
         File configFile = new File(userDir);
-        int requestsMade = 0;
         if (configFile.exists()) {
             try (Scanner scanner = new Scanner(configFile)) {
-                requestsMade = scanner.nextInt();
+                return scanner.nextInt();
             } catch (FileNotFoundException e) {
                 throw new RuntimeException(e);
             }
         }
-        return requestsMade;
+        return 0;
     }
 
     /**

@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 
@@ -53,7 +54,7 @@ public class Server implements Runnable {
      *
      * @throws IOException if an I/O error occurs when reading stream header
      */
-    private void process ( Socket client ) throws IOException {
+    private void process ( Socket client ) throws IOException, NoSuchAlgorithmException {
         ClientHandler clientHandler = new ClientHandler ( client , getPrivateRSAKey(), getPublicRSAKey());
         clientHandler.start ( );
     }

@@ -2,6 +2,7 @@ import java.io.*;
 import java.math.BigInteger;
 import java.net.Socket;
 import java.security.KeyPair;
+import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Properties;
@@ -28,6 +29,7 @@ public class Client {
     private static PrivateKey privateRSAKey;
     private static PublicKey receiverPublicRSAKey;
     private static BigInteger sharedSecret;
+    private static MessageDigest messageDigest ;
 
     /**
      * Constructs a Client object by specifying the port to connect to. The socket must be created before the sender can
@@ -50,7 +52,7 @@ public class Client {
         this.publicRSAKey = keyPair.getPublic ( );
         this.receiverPublicRSAKey = rsaKeyDistribution ( );
         this.sharedSecret = agreeOnSharedSecret ( receiverPublicRSAKey );
-
+        messageDigest = MessageDigest.getInstance ( "SHA-256" );
         validateDetailsUser();
     }
 
@@ -64,7 +66,7 @@ public class Client {
         FileManager.createFile( pkiDir, this.userName + "PuK.key", this.publicRSAKey.toString());
         FileManager.createFile( userDir + "/../", "private.txt", this.privateRSAKey.toString());
 
-        FileManager.getConfigFile("config/" +userName + ".txt");
+        requestsMade=FileManager.getConfigFile("config/" +userName + ".txt");
     }
 
 
@@ -75,10 +77,10 @@ public class Client {
     public void execute ( ) {
         Scanner usrInput = new Scanner ( System.in );
         try {
-            // Agree on a shared secret
             while ( isConnected ) {
                 FileManager.saveConfigFile(this.userName, this.requestsMade);
                 checkRequest();
+                System.out.println(sharedSecret);
                 System.out.println("Request number: "+ this.requestsMade);
                 // Reads the message to extract the path of the file
                 System.out.println ( "Write the path of the file" );
@@ -108,11 +110,13 @@ public class Client {
 
         if (requestsMade+1 >= MAX_REQUESTS) {
             System.out.println("Reached 5 requests, making new handshake");
-            //try {
-                //this.sharedSecret = agreeOnSharedSecret ( this.receiverPublicRSAKey );
-            // catch (Exception e) {
-                //System.out.println ( "Impossivel gerar novo handshake" );
-            //}
+            try {
+                sendMessage("handshake",sharedSecret);
+                this.sharedSecret = agreeOnSharedSecret(receiverPublicRSAKey);
+            }
+             catch(Exception e){
+                    System.out.println("Impossivel gerar novo handshake");
+             }
             this.requestsMade = 0;
         } else {
             this.requestsMade++; //nao sei depois como será feito. incrementar so depois de ele meter o input, senao vai contar como pedido ele escrever quit para sair da sessao
@@ -139,7 +143,7 @@ public class Client {
                     expectedPackets = response.getTotalMessages();
                 }
                 byte[] decryptedMessage = Encryption.decryptMessage(response.getMessage(), sharedSecret.toByteArray());
-                if(!Integrity.verifyDigest(response.getSignature(),Integrity.generateDigest(decryptedMessage))) {
+                if(!Integrity.verifyDigest(response.getSignature(),HMAC.computeHMAC(decryptedMessage,sharedSecret.toByteArray(),256,messageDigest))) {
                     throw new RuntimeException("The integrity of the message is not verified");
                 }
                 listaPacotes.add(decryptedMessage);
@@ -183,7 +187,7 @@ public class Client {
      */
     public void sendMessage ( String filePath , BigInteger sharedSecret) throws Exception {
         byte[] encryptedMessage = Encryption.encryptMessage ( filePath.getBytes ( ) , sharedSecret.toByteArray ( ) );
-        byte[] digest = Integrity.generateDigest ( filePath.getBytes ( ) );
+        byte[] digest = HMAC.computeHMAC(filePath.getBytes(),sharedSecret.toByteArray(),256,messageDigest);
         // Creates the message object
         Message messageObj = new Message ( encryptedMessage , digest, 0, 0, false);
         // Sends the message

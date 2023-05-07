@@ -3,8 +3,11 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.net.Socket;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.Arrays;
 
 /**
  * This class represents the client handler. It handles the communication with the client. It reads the file from the
@@ -18,6 +21,7 @@ public class ClientHandler extends Thread {
     private final boolean isConnected;
     private final PrivateKey privateRSAKey;
     private final PublicKey publicRSAKey;
+    private static MessageDigest messageDigest ;
 
     /**
      * Creates a ClientHandler object by specifying the socket to communicate with the client. All the processing is
@@ -27,12 +31,13 @@ public class ClientHandler extends Thread {
      *
      * @throws IOException when an I/O error occurs when creating the socket
      */
-    public ClientHandler (Socket client , PrivateKey privateRSAKey, PublicKey publicRSAKey ) throws IOException {
+    public ClientHandler (Socket client , PrivateKey privateRSAKey, PublicKey publicRSAKey ) throws IOException, NoSuchAlgorithmException {
         this.client = client;
         in = new ObjectInputStream ( client.getInputStream ( ) );
         out = new ObjectOutputStream ( client.getOutputStream ( ) );
         this.privateRSAKey = privateRSAKey;
         this.publicRSAKey = publicRSAKey;
+        messageDigest = MessageDigest.getInstance ( "SHA-256" );
         isConnected = true; // TODO: Check if this is necessary or if it should be controlled
     }
 
@@ -49,8 +54,10 @@ public class ClientHandler extends Thread {
                 Message message = ( Message ) in.readObject ( );
                 byte[] decryptedMessage = Encryption.decryptMessage ( message.getMessage ( ) , sharedSecret.toByteArray ( ) );
                 //check integrity
-                if(!Integrity.verifyDigest(message.getSignature(),Integrity.generateDigest(decryptedMessage))){
+                if(!Arrays.equals (message.getSignature(),HMAC.computeHMAC(decryptedMessage,sharedSecret.toByteArray(),256,messageDigest))){
                     throw new RuntimeException ( "The integrity of the message is not verified" );
+                }else if(Arrays.equals(decryptedMessage,"handshake".getBytes())){
+                    sharedSecret = agreeOnSharedSecret ( senderPublicRSAKey );
                 }else {
                     String request = new String(decryptedMessage);
                     // Reads the file and sends it to the client
@@ -82,7 +89,7 @@ public class ClientHandler extends Thread {
             int compri = Math.min(tamanhoMax, content.length - outtu); //tamanho de cada pacote
             byte[] pacote = new byte[compri];
             System.arraycopy(content, outtu, pacote, 0, compri);
-            byte[] digest = Integrity.generateDigest(pacote);
+            byte[] digest = HMAC.computeHMAC(pacote,sharedSecret.toByteArray(),256,messageDigest);
             byte[] encryptedMessage = Encryption.encryptMessage(pacote, sharedSecret.toByteArray());
             //Cria o pacote com a mensagem e outras infos (nr da mensagem, se é a ultima...)
 
