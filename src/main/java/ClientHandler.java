@@ -61,7 +61,15 @@ public class ClientHandler extends Thread {
                 }else {
                     String request = new String(decryptedMessage);
                     // Reads the file and sends it to the client
-                    byte[] content = FileHandler.readFile(RequestUtils.getAbsoluteFilePath(request));
+                    byte[] content = "".getBytes ( );
+                    try {
+                        content = FileHandler.readFile(RequestUtils.getAbsoluteFilePath(request));
+                    } catch (IOException e) {
+                        System.out.println("ERROR - The file does not exist");
+                        content = "ERROR - The file does not exist".getBytes();
+                    } catch (IllegalArgumentException e) {
+                        System.out.println("ERROR - Invalid prompt");
+                    }
                     sendFile(content, sharedSecret);
                 }
             }

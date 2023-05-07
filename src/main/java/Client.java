@@ -41,17 +41,17 @@ public class Client {
      */
     public Client ( int port, String userName ) throws Exception {
         client = new Socket ( HOST , port );
-        this.userName = userName;
+        this.userName = userName.trim();
         out = new ObjectOutputStream ( client.getOutputStream ( ) );
         in = new ObjectInputStream ( client.getInputStream ( ) );
         isConnected = true; // TODO: Check if this is necessary or if it should be controlled
         // Create a temporary directory for putting the request files
 
         KeyPair keyPair = Encryption.generateKeyPair ( );
-        this.privateRSAKey = keyPair.getPrivate ( );
-        this.publicRSAKey = keyPair.getPublic ( );
-        this.receiverPublicRSAKey = rsaKeyDistribution ( );
-        this.sharedSecret = agreeOnSharedSecret ( receiverPublicRSAKey );
+        privateRSAKey = keyPair.getPrivate ( );
+        publicRSAKey = keyPair.getPublic ( );
+        receiverPublicRSAKey = rsaKeyDistribution ( );
+        sharedSecret = agreeOnSharedSecret ( receiverPublicRSAKey );
         messageDigest = MessageDigest.getInstance ( "SHA-256" );
         validateDetailsUser();
     }
@@ -63,8 +63,8 @@ public class Client {
      */
     private void validateDetailsUser() throws Exception {
         userDir = FileManager.validateFile(userName);
-        FileManager.createFile( pkiDir, this.userName + "PuK.key", this.publicRSAKey.toString());
-        FileManager.createFile( userDir + "/../", "private.txt", this.privateRSAKey.toString());
+        FileManager.createFile( pkiDir, this.userName + "PuK.key", publicRSAKey.toString());
+        FileManager.createFile( userDir + "/../", "private.txt", privateRSAKey.toString());
 
         requestsMade=FileManager.getConfigFile("config/" +userName + ".txt");
     }
@@ -78,19 +78,19 @@ public class Client {
         Scanner usrInput = new Scanner ( System.in );
         try {
             while ( isConnected ) {
-                FileManager.saveConfigFile(this.userName, this.requestsMade);
+                FileManager.saveConfigFile(this.userName, requestsMade);
                 checkRequest();
                 System.out.println(sharedSecret);
-                System.out.println("Request number: "+ this.requestsMade);
+                System.out.println("Request number: "+ requestsMade);
                 // Reads the message to extract the path of the file
                 System.out.println ( "Write the path of the file" );
                 String request = usrInput.nextLine ( );
                 // Request the file
-                sendMessage ( request , this.sharedSecret);
+                sendMessage ( request , sharedSecret);
                 // Waits for the response
 
                 try {
-                    processResponse ( RequestUtils.getFileNameFromRequest ( request ) , this.sharedSecret);
+                    processResponse ( RequestUtils.getFileNameFromRequest ( request ) , sharedSecret);
                 } catch (IllegalArgumentException e ) {
                     System.out.println("ERROR - FORMAT IS INVALID");
                 }
@@ -112,14 +112,14 @@ public class Client {
             System.out.println("Reached 5 requests, making new handshake");
             try {
                 sendMessage("handshake",sharedSecret);
-                this.sharedSecret = agreeOnSharedSecret(receiverPublicRSAKey);
+                sharedSecret = agreeOnSharedSecret(receiverPublicRSAKey);
             }
              catch(Exception e){
                     System.out.println("Impossivel gerar novo handshake");
              }
-            this.requestsMade = 0;
+            requestsMade = 0;
         } else {
-            this.requestsMade++; //nao sei depois como será feito. incrementar so depois de ele meter o input, senao vai contar como pedido ele escrever quit para sair da sessao
+            requestsMade++; //nao sei depois como será feito. incrementar so depois de ele meter o input, senao vai contar como pedido ele escrever quit para sair da sessao
         }
     }
 
