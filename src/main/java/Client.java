@@ -23,7 +23,7 @@ public class Client {
     private final String pkiDir = System.getProperty("user.dir") + "/pki/public_keys/";
     private static String userDir;
     private final String userName;
-    private static int requestsMade = 0; //number of requests
+    public static int requestsMade = 0; //number of requests
     private final int MAX_REQUESTS = 5; //max of requests before new handshake
     private static PublicKey publicRSAKey;
     private static PrivateKey privateRSAKey;
@@ -106,7 +106,7 @@ public class Client {
     /**
      * Checks if the client has no more requests to make
      */
-    private void checkRequest () {
+    public void checkRequest () {
 
         if (requestsMade+1 >= MAX_REQUESTS) {
             System.out.println("Reached 5 requests, making new handshake");
@@ -115,11 +115,11 @@ public class Client {
                 sharedSecret = agreeOnSharedSecret(receiverPublicRSAKey);
             }
              catch(Exception e){
-                    System.out.println("Impossivel gerar novo handshake");
+                    System.out.println("Cannot generate new handshake");
              }
             requestsMade = 0;
         } else {
-            requestsMade++; //nao sei depois como será feito. incrementar so depois de ele meter o input, senao vai contar como pedido ele escrever quit para sair da sessao
+            requestsMade++;
         }
     }
 

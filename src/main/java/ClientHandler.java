@@ -7,6 +7,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
@@ -22,6 +23,9 @@ public class ClientHandler extends Thread {
     private final PrivateKey privateRSAKey;
     private final PublicKey publicRSAKey;
     private static MessageDigest messageDigest ;
+
+    private ArrayList<byte[]> pacotes = new ArrayList<byte[]>();
+
 
     /**
      * Creates a ClientHandler object by specifying the socket to communicate with the client. All the processing is
@@ -88,7 +92,7 @@ public class ClientHandler extends Thread {
      *
      * @throws IOException when an I/O error occurs when sending the file
      */
-    private void sendFile ( byte[] content , BigInteger sharedSecret) throws Exception {
+    public void sendFile ( byte[] content , BigInteger sharedSecret) throws Exception {
         int tamanhoMax = 1024; // tamanho pacote 1024kb
         int numPacotes = (content.length + tamanhoMax - 1) / tamanhoMax; //calcula numero de pacotes
         for (int i = 0; i < numPacotes; i++) {
@@ -107,6 +111,9 @@ public class ClientHandler extends Thread {
 
             out.writeObject(response);
             out.flush();
+
+            pacotes.add(encryptedMessage); //usado depois no teste sendFile
+
         }
     }
 
@@ -182,4 +189,11 @@ public class ClientHandler extends Thread {
     private void sendPublicDHKey ( BigInteger publicKey ) throws Exception {
         out.writeObject ( Encryption.encryptRSA ( publicKey.toByteArray ( ) , this.privateRSAKey ) );
     }
+    /**
+     * used for sendFile Test
+     */
+    public byte[] getPacotes(int numeroPack) {
+        return pacotes.get(numeroPack);
+    }
+
 }
