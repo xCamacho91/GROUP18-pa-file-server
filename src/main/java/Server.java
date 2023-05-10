@@ -12,11 +12,25 @@ import java.security.PublicKey;
  */
 public class Server implements Runnable {
 
-
+    /**
+     * The path to the directory where the files are stored
+     */
     public static final String FILE_PATH = "server/files";
+    /**
+     * The server socket
+     */
     private final ServerSocket server;
+    /**
+     * Indicates if the server is connected
+     */
     private final boolean isConnected;
+    /**
+     * The private RSA key
+     */
     private final PrivateKey privateRSAKey;
+    /**
+     * The public RSA key
+     */
     private final PublicKey publicRSAKey;
 
     /**
@@ -32,7 +46,7 @@ public class Server implements Runnable {
         KeyPair keyPair = Encryption.generateKeyPair ( );
         this.privateRSAKey = keyPair.getPrivate ( );
         this.publicRSAKey = keyPair.getPublic ( );
-        isConnected = true; // TODO: Check if this is necessary or if it should be controlled
+        this.isConnected = true;
     }
 
     @Override
@@ -70,10 +84,20 @@ public class Server implements Runnable {
         }
     }
 
+    /**
+     * Get the private RSA key
+     *
+     * @return
+     */
     public PrivateKey getPrivateRSAKey() {
         return privateRSAKey;
     }
 
+    /**
+     * Get the public RSA key
+     *
+     * @return
+     */
     public PublicKey getPublicRSAKey() {
         return publicRSAKey;
     }

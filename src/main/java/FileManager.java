@@ -1,4 +1,6 @@
 import java.io.*;
+import java.math.BigInteger;
+import java.security.PublicKey;
 import java.util.Properties;
 import java.util.Scanner;
 
@@ -28,6 +30,7 @@ public class FileManager {
      *
      * @param path
      * @param name
+     * @param content
      * @throws IOException
      */
     public static void createFile ( String path, String name, String content ) throws IOException {
@@ -58,6 +61,10 @@ public class FileManager {
 
     /**
      * Saving in txt file's the number o requests of each client
+     *
+     * @param userName
+     * @param requestsMade
+     * @throws IOException
      */
     public static void saveConfigFile(String userName, int requestsMade) {
         try {
@@ -76,24 +83,17 @@ public class FileManager {
 
     /**
      * Validate the existence of the directory where the files will be stored.
+     *
+     * @param userName
      */
     public static String validateFile( String userName ) {
-        String userDir = null;
         String absolutePath = System.getProperty("user.dir") + File.separator + "users\\" + userName + "\\files";
         File folder = new File(absolutePath);
-        //File subfolder = new File(folder, "files");
 
         if (!folder.exists()) {
             folder.mkdirs();
-            userDir = folder.getAbsolutePath();
-            System.out.println("Folder created at path: " + folder.getAbsolutePath());
-            System.out.println("Subfolder created at path: " + folder.getAbsolutePath());
-        } else {
-            userDir = folder.getAbsolutePath();
-            System.out.println("Subfolder already exists at path: " + folder.getAbsolutePath());
         }
-
-        return userDir;
+        return folder.getAbsolutePath();
     }
 
 }

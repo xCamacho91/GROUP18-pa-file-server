@@ -5,7 +5,6 @@ import java.security.KeyPair;
 import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.Properties;
 import java.util.Scanner;
 import java.util.*;
 
@@ -20,16 +19,46 @@ public class Client {
     private final ObjectInputStream in;
     private final ObjectOutputStream out;
     private final boolean isConnected;
+    /**
+     * The directory of the public keys
+     */
     private final String pkiDir = System.getProperty("user.dir") + "/pki/public_keys/";
+    /**
+     * The directory of the user
+     */
     private static String userDir;
+    /**
+     * The username of the client
+     */
     private final String userName;
-    private static int requestsMade = 0; //number of requests
+    /**
+     * The maximum size of a packet.
+     */
+    public static int requestsMade = 0; //number of requests
+    /**
+     * The maximum number of requests before a new handshake
+     */
     private final int MAX_REQUESTS = 5; //max of requests before new handshake
+    /**
+     * The public RSA key.
+     */
     private static PublicKey publicRSAKey;
+    /**
+     * The private RSA key
+     */
     private static PrivateKey privateRSAKey;
+    /**
+     * The public RSA key of the receiver
+     */
     private static PublicKey receiverPublicRSAKey;
+    /**
+     * The shared secret
+     */
     private static BigInteger sharedSecret;
-    private static MessageDigest messageDigest ;
+    /**
+     * The message digest algorithm.
+     */
+    private static MessageDigest messageDigest;
 
     /**
      * Constructs a Client object by specifying the port to connect to. The socket must be created before the sender can
@@ -73,6 +102,8 @@ public class Client {
     /**
      * Executes the client. It reads the file from the console and sends it to the server. It waits for the response and
      * writes the file to the temporary directory.
+     *
+     * @throws Exception
      */
     public void execute ( ) {
         Scanner usrInput = new Scanner ( System.in );
@@ -106,8 +137,7 @@ public class Client {
     /**
      * Checks if the client has no more requests to make
      */
-    private void checkRequest () {
-
+    public void checkRequest () {
         if (requestsMade+1 >= MAX_REQUESTS) {
             System.out.println("Reached 5 requests, making new handshake");
             try {
@@ -115,21 +145,21 @@ public class Client {
                 sharedSecret = agreeOnSharedSecret(receiverPublicRSAKey);
             }
              catch(Exception e){
-                    System.out.println("Impossivel gerar novo handshake");
+                    System.out.println("Cannot generate new handshake");
              }
             requestsMade = 0;
         } else {
-            requestsMade++; //nao sei depois como será feito. incrementar so depois de ele meter o input, senao vai contar como pedido ele escrever quit para sair da sessao
+            requestsMade++;
         }
     }
-
-
 
     /**
      * Reads the response from the server and writes the file to the temporary directory.
      *
      * @param fileName the name of the file to write
      * @param sharedSecret symmetric key to decrypt message
+     *
+     * throws IOException
      */
     private void processResponse ( String fileName , BigInteger sharedSecret) {
         try {
@@ -217,7 +247,7 @@ public class Client {
      *
      * @throws Exception when the Diffie-Hellman algorithm fails
      */
-    private BigInteger agreeOnSharedSecret (PublicKey receiverPublicRSAKey ) throws Exception {
+    public BigInteger agreeOnSharedSecret(PublicKey receiverPublicRSAKey) throws Exception {
         // Generates a private key
         BigInteger privateDHKey = DiffieHellman.generatePrivateKey ( );
         BigInteger publicDHKey = DiffieHellman.generatePublicKey ( privateDHKey );
@@ -248,7 +278,7 @@ public class Client {
      *
      * @throws Exception when the key distribution protocol fails
      */
-    private PublicKey rsaKeyDistribution ( ) throws Exception {
+    public PublicKey rsaKeyDistribution ( ) throws Exception {
         // Sends the public key
         sendPublicRSAKey ( );
         // Receive the public key of the sender
@@ -263,15 +293,6 @@ public class Client {
     private void sendPublicRSAKey ( ) throws IOException {
         out.writeObject ( publicRSAKey );
         out.flush ( );
-    }
-
-
-    /**
-     * used for tests
-     * @return
-     */
-    public int getRequestsMade() {
-        return requestsMade;
     }
 
 }

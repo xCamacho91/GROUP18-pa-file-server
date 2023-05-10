@@ -5,11 +5,26 @@ import java.io.Serializable;
  */
 public class Message implements Serializable {
 
+    /**
+     * The message that is sent to the server
+     */
     private final byte[] message;
+    /**
+     * The signature of the message
+     */
     private final byte[] signature;
-    private int messageNumber; // message number
-    private int totalMessages; // total of messages of each file
-    private boolean last;   //verify if it is the last package from the split of the files
+    /**
+     * The message number
+     */
+    private final int messageNumber; // message number
+    /**
+     * The total messages
+     */
+    private final int totalMessages; // total of messages of each file
+    /**
+     * is last message
+     */
+    private final boolean last;   //verify if it is the last package from the split of the files
 
 
     /**
@@ -34,19 +49,32 @@ public class Message implements Serializable {
     public byte[] getMessage ( ) {
         return message;
     }
+
+    /**
+     * Gets the signature string.
+     *
+     * @return the signature string
+     */
     public byte[] getSignature ( ) {
         return signature;
     }
 
+    /**
+     * Gets the message number.
+     *
+     * @return the message number
+     */
     public int getMessageNumber() {
         return messageNumber;
     }
 
+    /**
+     * Gets the total messages.
+     *
+     * @return the total messages
+     */
     public int getTotalMessages() {
         return totalMessages;
-    }
-    public boolean isLast() {
-        return last;
     }
 
 }
