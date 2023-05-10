@@ -8,6 +8,8 @@
 # DIRECTORY
 .idea/*
 .users/*
+.config/*.txt
+.pki/public_keys/*.txt
 
 # User-specific stuff
 .idea/**/workspace.xml

@@ -1,6 +1,10 @@
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 
 /**
  * This class represents a server that receives a message from the clients. The server is implemented as a thread. Each
@@ -8,10 +12,26 @@ import java.net.Socket;
  */
 public class Server implements Runnable {
 
-
+    /**
+     * The path to the directory where the files are stored
+     */
     public static final String FILE_PATH = "server/files";
+    /**
+     * The server socket
+     */
     private final ServerSocket server;
+    /**
+     * Indicates if the server is connected
+     */
     private final boolean isConnected;
+    /**
+     * The private RSA key
+     */
+    private final PrivateKey privateRSAKey;
+    /**
+     * The public RSA key
+     */
+    private final PublicKey publicRSAKey;
 
     /**
      * Constructs a Server object by specifying the port number. The server will be then created on the specified port.
@@ -21,9 +41,12 @@ public class Server implements Runnable {
      *
      * @throws IOException if an I/O error occurs when opening the socket
      */
-    public Server ( int port ) throws IOException {
+    public Server ( int port ) throws Exception {
         server = new ServerSocket ( port );
-        isConnected = true; // TODO: Check if this is necessary or if it should be controlled
+        KeyPair keyPair = Encryption.generateKeyPair ( );
+        this.privateRSAKey = keyPair.getPrivate ( );
+        this.publicRSAKey = keyPair.getPublic ( );
+        this.isConnected = true;
     }
 
     @Override
@@ -43,15 +66,17 @@ public class Server implements Runnable {
     /**
      * Processes the request from the client.
      *
+     * @param client the socket to communicate with the client
      * @throws IOException if an I/O error occurs when reading stream header
      */
-    private void process ( Socket client ) throws IOException {
-        ClientHandler clientHandler = new ClientHandler ( client );
+    private void process ( Socket client ) throws IOException, NoSuchAlgorithmException {
+        ClientHandler clientHandler = new ClientHandler ( client , getPrivateRSAKey(), getPublicRSAKey());
         clientHandler.start ( );
     }
 
     /**
      * Closes the connection and the associated streams.
+     * @throws IOException if an I/O error occurs when closing the socket
      */
     private void closeConnection ( ) {
         try {
@@ -61,4 +86,21 @@ public class Server implements Runnable {
         }
     }
 
+    /**
+     * Get the private RSA key
+     *
+     * @return the private RSA key
+     */
+    public PrivateKey getPrivateRSAKey() {
+        return privateRSAKey;
+    }
+
+    /**
+     * Get the public RSA key
+     *
+     * @return the public RSA key
+     */
+    public PublicKey getPublicRSAKey() {
+        return publicRSAKey;
+    }
 }
