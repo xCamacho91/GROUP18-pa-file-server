@@ -73,7 +73,7 @@ public class Client {
         this.userName = userName.trim();
         out = new ObjectOutputStream ( client.getOutputStream ( ) );
         in = new ObjectInputStream ( client.getInputStream ( ) );
-        isConnected = true; // TODO: Check if this is necessary or if it should be controlled
+        this.isConnected = true;
         // Create a temporary directory for putting the request files
 
         KeyPair keyPair = Encryption.generateKeyPair ( );
@@ -173,8 +173,8 @@ public class Client {
                     expectedPackets = response.getTotalMessages();
                 }
                 byte[] decryptedMessage = Encryption.decryptMessage(response.getMessage(), sharedSecret.toByteArray());
-                if(!Integrity.verifyDigest(response.getSignature(),HMAC.computeHMAC(decryptedMessage,sharedSecret.toByteArray(),256,messageDigest))) {
-                    throw new RuntimeException("The integrity of the message is not verified");
+                if(!Arrays.equals (response.getSignature(),HMAC.computeHMAC(decryptedMessage,sharedSecret.toByteArray(),256,messageDigest))){
+                    throw new RuntimeException ( "The integrity of the message is not verified" );
                 }
                 listaPacotes.add(decryptedMessage);
                 receivedPackets++;
