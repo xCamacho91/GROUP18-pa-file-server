@@ -66,6 +66,7 @@ public class Server implements Runnable {
     /**
      * Processes the request from the client.
      *
+     * @param client the socket to communicate with the client
      * @throws IOException if an I/O error occurs when reading stream header
      */
     private void process ( Socket client ) throws IOException, NoSuchAlgorithmException {
@@ -75,6 +76,7 @@ public class Server implements Runnable {
 
     /**
      * Closes the connection and the associated streams.
+     * @throws IOException if an I/O error occurs when closing the socket
      */
     private void closeConnection ( ) {
         try {
@@ -87,7 +89,7 @@ public class Server implements Runnable {
     /**
      * Get the private RSA key
      *
-     * @return
+     * @return the private RSA key
      */
     public PrivateKey getPrivateRSAKey() {
         return privateRSAKey;
@@ -96,7 +98,7 @@ public class Server implements Runnable {
     /**
      * Get the public RSA key
      *
-     * @return
+     * @return the public RSA key
      */
     public PublicKey getPublicRSAKey() {
         return publicRSAKey;

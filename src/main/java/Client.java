@@ -88,7 +88,7 @@ public class Client {
     /**
      *  Creates the files for the user and validates the user
      *
-     * @throws Exception
+     * @throws Exception if the user is not valid
      */
     private void validateDetailsUser() throws Exception {
         userDir = FileManager.validateFile(userName);
@@ -103,7 +103,7 @@ public class Client {
      * Executes the client. It reads the file from the console and sends it to the server. It waits for the response and
      * writes the file to the temporary directory.
      *
-     * @throws Exception
+     * @throws Exception if an error occurs when sending the message or when writing the file
      */
     public void execute ( ) {
         Scanner usrInput = new Scanner ( System.in );

@@ -32,6 +32,8 @@ public class Message implements Serializable {
      *
      * @param message the message that is sent to the server
      * @param signature hash to verify message integrity
+     * @param messageNumber the message number
+     * @param totalMessages the total messages
      */
     public Message(byte[] message, byte[] signature, int messageNumber, int totalMessages, boolean last) {
         this.message = message;
@@ -77,4 +79,12 @@ public class Message implements Serializable {
         return totalMessages;
     }
 
+    /**
+     * Gets the last message.
+     *
+     * @return the last message
+     */
+    public boolean getLast() {
+        return last;
+    }
 }
