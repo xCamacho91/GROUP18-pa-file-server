@@ -4,10 +4,12 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.KeyPair;
+import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Scanner;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestHandShake {
@@ -44,5 +46,17 @@ public class TestHandShake {
         BigInteger clientSharedKey = DiffieHellman.computePrivateKey ( decryptedServerPublicDHKey , clientPrivateDHKey );
 
         assertEquals(serverSharedKey,clientSharedKey);
+
+        //hash and encryption
+        String text = "message";
+        MessageDigest messageDigest = MessageDigest.getInstance ( "SHA-256" );
+        byte[] encryptedMessage = Encryption.encryptMessage ( text.getBytes ( ) , serverSharedKey.toByteArray ( ) );
+        byte[] encryptedHash = HMAC.computeHMAC(text.getBytes(),serverSharedKey.toByteArray(),256,messageDigest);
+
+        byte[] decryptedMessage = Encryption.decryptMessage(encryptedMessage, serverSharedKey.toByteArray());
+        byte[] decryptedHash = HMAC.computeHMAC(decryptedMessage,serverSharedKey.toByteArray(),256,messageDigest);
+
+        assertArrayEquals(text.getBytes(),decryptedMessage);
+        assertArrayEquals(encryptedHash,decryptedHash);
     }
 }

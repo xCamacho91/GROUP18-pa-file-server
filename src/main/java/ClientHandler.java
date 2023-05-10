@@ -20,11 +20,26 @@ public class ClientHandler extends Thread {
     private final ObjectOutputStream out;
     private final Socket client;
     private final boolean isConnected;
+    /**
+     * The private RSA key
+     */
     private final PrivateKey privateRSAKey;
+    /**
+     * The public RSA key.
+     */
     private final PublicKey publicRSAKey;
-    private static MessageDigest messageDigest ;
-
-    private ArrayList<byte[]> pacotes = new ArrayList<byte[]>();
+    /**
+     * The message digest algorithm.
+     */
+    private static MessageDigest messageDigest;
+    /**
+     * The maximum size of a packet.
+     */
+    private final int MAX_SIZE = 1024;
+    /**
+     * The list of packets.
+     */
+    private static final ArrayList<byte[]> pacotes = new ArrayList<byte[]>();
 
 
     /**
@@ -32,6 +47,8 @@ public class ClientHandler extends Thread {
      * done in a separate thread.
      *
      * @param client the socket to communicate with the client
+     * @param privateRSAKey the private RSA key
+     * @param publicRSAKey the public RSA key
      *
      * @throws IOException when an I/O error occurs when creating the socket
      */
@@ -86,26 +103,24 @@ public class ClientHandler extends Thread {
     }
 
     /**
-     * Sends the file to the client
+     * Sends the file to client in packets
      *
      * @param content the content of the file to send
+     * @param sharedSecret the shared secret
      *
      * @throws IOException when an I/O error occurs when sending the file
      */
-    public void sendFile ( byte[] content , BigInteger sharedSecret) throws Exception {
-        int tamanhoMax = 1024; // tamanho pacote 1024kb
-        int numPacotes = (content.length + tamanhoMax - 1) / tamanhoMax; //calcula numero de pacotes
+    private void sendFile ( byte[] content , BigInteger sharedSecret) throws Exception {
+        int numPacotes = (content.length + MAX_SIZE - 1) / MAX_SIZE; //calcula numero de pacotes
         for (int i = 0; i < numPacotes; i++) {
-            int outtu = i * tamanhoMax; //intervalos de cada conteudo. 0-1024-2048...
-            System.out.println(outtu);
-            int compri = Math.min(tamanhoMax, content.length - outtu); //tamanho de cada pacote
+            int outtu = i * MAX_SIZE; //intervalos de cada conteudo. 0-1024-2048...
+            int compri = Math.min(MAX_SIZE, content.length - outtu); //tamanho de cada pacote
             byte[] pacote = new byte[compri];
             System.arraycopy(content, outtu, pacote, 0, compri);
             byte[] digest = HMAC.computeHMAC(pacote,sharedSecret.toByteArray(),256,messageDigest);
             byte[] encryptedMessage = Encryption.encryptMessage(pacote, sharedSecret.toByteArray());
-            //Cria o pacote com a mensagem e outras infos (nr da mensagem, se é a ultima...)
 
-           boolean isLast=(i==numPacotes-1);
+            boolean isLast=(i==numPacotes-1);
 
             Message  response = new Message(encryptedMessage, digest, i+1, numPacotes, isLast);
 
@@ -113,12 +128,13 @@ public class ClientHandler extends Thread {
             out.flush();
 
             pacotes.add(encryptedMessage); //usado depois no teste sendFile
-
         }
     }
 
     /**
      * Closes the connection by closing the socket and the streams.
+     *
+     * @throws RuntimeException when an I/O error occurs when closing the connection
      */
     private void closeConnection ( ) {
         try {
@@ -188,12 +204,6 @@ public class ClientHandler extends Thread {
      */
     private void sendPublicDHKey ( BigInteger publicKey ) throws Exception {
         out.writeObject ( Encryption.encryptRSA ( publicKey.toByteArray ( ) , this.privateRSAKey ) );
-    }
-    /**
-     * used for sendFile Test
-     */
-    public byte[] getPacotes(int numeroPack) {
-        return pacotes.get(numeroPack);
     }
 
 }

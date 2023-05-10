@@ -1,4 +1,3 @@
-
 public class ByteUtils {
 
     public static byte [] generatePad(int value, int blocksize) {

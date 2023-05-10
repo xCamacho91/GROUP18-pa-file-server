@@ -1,5 +1,4 @@
 import java.io.*;
-import java.util.Properties;
 import java.util.Scanner;
 
 public class FileManager {
@@ -26,9 +25,10 @@ public class FileManager {
     /**
      * Creates a file in the specified path with the specified name.
      *
-     * @param path
-     * @param name
-     * @throws IOException
+     * @param path the path where the file will be created
+     * @param name the name of the file to create
+     * @param content the content of the file to create
+     * @throws IOException when an I/O error occurs when creating the file
      */
     public static void createFile ( String path, String name, String content ) throws IOException {
         File file = new File ( path + name);
@@ -41,8 +41,8 @@ public class FileManager {
     /**
      * Returns the server's configuration.
      *
-     * @param userDir
-     * @return
+     * @param userDir the path of the file to read
+     * @return the number of requests made by the user
      */
     public static int getConfigFile(String userDir) {
         File configFile = new File(userDir);
@@ -58,6 +58,10 @@ public class FileManager {
 
     /**
      * Saving in txt file's the number o requests of each client
+     *
+     * @param userName the name of the user
+     * @param requestsMade the number of requests made by the user
+     * @throws IOException when an I/O error occurs when writing the file
      */
     public static void saveConfigFile(String userName, int requestsMade) {
         try {
@@ -76,24 +80,18 @@ public class FileManager {
 
     /**
      * Validate the existence of the directory where the files will be stored.
+     *
+     * @param userName the name of the user
+     * @return the absolute path of the directory where the files will be stored
      */
     public static String validateFile( String userName ) {
-        String userDir = null;
         String absolutePath = System.getProperty("user.dir") + File.separator + "users\\" + userName + "\\files";
         File folder = new File(absolutePath);
-        //File subfolder = new File(folder, "files");
 
         if (!folder.exists()) {
             folder.mkdirs();
-            userDir = folder.getAbsolutePath();
-            System.out.println("Folder created at path: " + folder.getAbsolutePath());
-            System.out.println("Subfolder created at path: " + folder.getAbsolutePath());
-        } else {
-            userDir = folder.getAbsolutePath();
-            System.out.println("Subfolder already exists at path: " + folder.getAbsolutePath());
         }
-
-        return userDir;
+        return folder.getAbsolutePath();
     }
 
 }

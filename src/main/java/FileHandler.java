@@ -1,5 +1,4 @@
 import java.io.*;
-import java.util.Properties;
 
 /**
  * This class represents the file handler. It was the methods for reading and writing text files.
@@ -26,6 +25,11 @@ public class FileHandler {
 
     /**
      * Writes a text file and returns the result in bytes
+     *
+     * @param path the path of the file to write
+     * @param content the content of the file in bytes
+     * @throws IOException when an I/O error occurs when reading the file
+     *
      */
     public static void writeFile ( String path , byte[] content ) throws IOException {
         File file = new File ( path );
